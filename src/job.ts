@@ -1,7 +1,7 @@
 import { JobDescription, SourceDescription, TransformDescription, SinkDescription, ConnectionNext, Connection } from "./job-description";
 import { Stream } from "stream";
 import { stringify } from "querystring";
-import { CounterStorage } from "./counter-starage";
+import { CounterStorage } from "./counter-staroge";
 const debug = false;
 const md5 = require('md5')
 export class Job {
@@ -101,7 +101,7 @@ export class Job {
             const start = new Date().getTime();
             const newBuffer = transformNode.transform(chunk, encoding);
             const end = new Date().getTime();
-            this.counterStorage.putTime(name, start-end);
+            this.counterStorage.putTime(name, end-start);
             done(null, newBuffer);
         }
         return transformStream;
@@ -129,18 +129,6 @@ export class Job {
     }
 }
 
-export class Source {
-
-}
-
-export class Transform {
-
-}
-
-
-export class Sink {
-
-}
 const connections: Connection[] = [{
     from: 's1',
     to: {
@@ -158,7 +146,7 @@ const sources: { [key: string]: SourceDescription } = {
                 count++;
                 (debug || count % 1000 == 0) && console.log(count)
                 next(Buffer.from(Math.random().toString()));
-                if (count >= 10000) {
+                if (count >= 500) {
                     clearInterval(interval);
                     finished();
                 }
