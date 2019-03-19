@@ -9,7 +9,7 @@ var tsProject = ts.createProject("tsconfig.json");
 // });
 
 gulp.task('scripts', function() {
-    return gulp.src('src/*.ts')
+    return gulp.src('src/**/*.ts')
         .pipe(tsProject())
         .pipe(gulp.dest('dist'));
 }); 

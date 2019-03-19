@@ -6,9 +6,7 @@ export interface JobDescription {
     sinks: { [key: string]: SinkDescription };
 }
 
-
 export interface SourceDescription {
-    size?: number;
     produce: (next: (buffer:Buffer) => void, finished: () => void) => void;
 }
 
