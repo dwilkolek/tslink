@@ -13,7 +13,7 @@ export interface SourceDescription {
 }
 
 export interface TransformDescription {
-    transform: (data: Buffer, encoding: string) => Buffer;
+    transform: (data: Buffer, encoding: string) => Buffer | undefined;
 }
 
 export interface SinkDescription {
