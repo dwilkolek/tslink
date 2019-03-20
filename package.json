@@ -13,11 +13,9 @@
     "@types/node": "^11.11.3",
     "gulp": "^4.0.0",
     "gulp-typescript": "^5.0.1",
-    "merge2": "^1.2.3",
     "typescript": "^3.3.3333"
   },
   "dependencies": {
-    "md5": "^2.2.1",
     "rxjs": "^6.4.0"
   }
 }
