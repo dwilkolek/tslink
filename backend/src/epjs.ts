@@ -10,14 +10,6 @@ class EPJS {
     worker: EpWorker;
 
     public static bootstrap() {
-        if (cluster.isMaster) {
-            const cpus = os.cpus().length;
-            console.log(`Forking for ${cpus} CPUs`);
-            for (let i = 0; i < cpus; i++) {
-                cluster.fork();
-            }
-        }
-
         return new EPJS();
     }
 

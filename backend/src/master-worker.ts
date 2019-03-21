@@ -25,6 +25,7 @@ export class MasterWorker implements EpWorker {
     ];
     constructor() {
         console.log("Master pid:", process.pid)
+        this.forkCores();
         this.initExpress();
     }
 
@@ -37,9 +38,28 @@ export class MasterWorker implements EpWorker {
         return workableWorkers[Math.round(Math.random() * 1000) % workableWorkers.length];
     }
     runningJobs = 0;
+    forkCores() {
+        let cpus = os.cpus().length;
+        const args = <string[]>process.argv;
+        args.forEach(arg => {
+            if (arg.indexOf('cpu=') > -1) {
+                const configCpus = parseInt(arg.replace('cpu=', ''));
+                //TODO: maybe enable forking to more than have?
+                if (configCpus <= cpus) {
+                    cpus = configCpus
+                } else {
+                    console.warn(`Set more cpus that possibles. Fallback to: ${cpus}cpus`);
+                }
+            }
+        })
+        console.log(`Forking for ${cpus} CPUs`);
+        for (let i = 0; i < cpus; i++) {
+            cluster.fork();
+        }
+    }
     initExpress() {
         this.app = express();
-       
+
         // Route our backend calls
         this.app.get('/api/storedJobs', (req: any, res: any) => {
             console.log('files,', this.files)
@@ -54,7 +74,7 @@ export class MasterWorker implements EpWorker {
                 file: './jobs/job-1.js'
             });
             this.runningJobs++;
-            res.json({runningJobs: this.runningJobs});
+            res.json({ runningJobs: this.runningJobs });
         });
         // this.app.get('/api/stats', (req: any, res: any) => {
         //     res.json(
