@@ -1,0 +1,24 @@
+{
+  "name": "epjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "buildBackend": "cd backend & npm install & npm run build & cd ..",
+    "buildFrontend": "cd frontend & npm install & npm run buildProd & cd ..",
+    "build": "npm run buildBackend & npm run buildFrontend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwilkolek/epjs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dwilkolek/epjs/issues"
+  },
+  "homepage": "https://github.com/dwilkolek/epjs#readme"
+}
