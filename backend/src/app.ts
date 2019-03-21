@@ -1,6 +1,6 @@
 import { Job } from "./job";
 
-const jobsDirectory = 'D:/dev/epjs/backend/dist/jobs';
+const jobsDirectory = './jobs';
 const fs = require('fs');
 
 export class App {
