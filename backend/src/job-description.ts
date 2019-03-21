@@ -7,7 +7,7 @@ export interface JobDescription {
 }
 
 export interface SourceDescription {
-    produce: (next: (buffer:Buffer) => void, finished: () => void) => void;
+    produce: () => Buffer;
 }
 
 export interface TransformDescription {

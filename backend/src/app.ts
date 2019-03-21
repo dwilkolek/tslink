@@ -2,6 +2,8 @@ import { Job } from "./job";
 
 const jobsDirectory = './jobs';
 const fs = require('fs');
+const cluster = require('cluster');
+
 
 export class App {
 
@@ -37,8 +39,8 @@ export class App {
             fns = await import(filelocation)
             const construct = <any>fns[Object.keys(fns)[0]];
             const job = new Job(new construct());
-            job.run();
             this.jobs.push(job);
+            job.run();
         })().catch(e => {
             console.error(e)
         });

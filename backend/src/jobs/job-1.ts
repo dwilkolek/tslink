@@ -1,19 +1,12 @@
 export class Job {
     name = 'jobs1';
     sources = {
-        s1: {
-            produce: function (next: any, finished: any) {
-                var count = 0;
-                var interval = setInterval(function () {
-                    count++;
-                    next(Buffer.from(Math.random().toString()));
-                    if (count >= 500) {
-                        clearInterval(interval);
-                        finished();
-                    }
-                });
+        sources1: {
+            produce: function () {
+                return Buffer.from(Math.random().toString());
             }
         }
+       
     };
     sinks = {
         s3: {
@@ -31,7 +24,7 @@ export class Job {
         }
     };
     connections = [{
-        from: 's1',
+        from: 'sources1',
         to: {
             name: 's2',
             to: {
