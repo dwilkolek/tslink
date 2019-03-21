@@ -1,13 +1,17 @@
 import { JobDescription, ConnectionNext } from "./job-description";
 import { Stream } from "stream";
 import { CounterStore } from "./counter-store";
+const uuid = require('uuid/v4');
+
 export class Job {
 
     private _counterStore: CounterStore;
     private streams: { [key: string]: Stream } = {};
     private pipelines: any[] = [];
+    private uuid: string;
     constructor(private jobDescription: JobDescription) {
-        this._counterStore = new CounterStore(this.jobDescription.name);
+        this.uuid = uuid();
+        this._counterStore = new CounterStore(this.uuid, this.jobDescription.name);
         this.sourceNames.forEach(source => {
             this._counterStore.init(source);
         });

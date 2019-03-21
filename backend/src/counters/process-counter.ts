@@ -25,9 +25,8 @@ export class ProcessingCounter {
         return `ProcessingCounter processed ${this.count} chunks [${Math.round(this.size * 1000) / 1000} ${this.sizeMultiplicationToUnit(this.sizeMultiplication)}].`
     }
     
-    prettyStats(name: string) {
+    json() {
         return {
-            name: name,
             count: this.count,
             unit: this.sizeMultiplicationToUnit(this.sizeMultiplication),
             size: this.size

@@ -10,6 +10,12 @@ export class TimeCounter {
         return `TimeCounter took ${Math.round(this.totalTime * 100) / 100}${this.units[this.currentUnit]}`;
     }
 
+    json() {
+        return {
+            totalTime: Math.round(this.totalTime * 100) / 100,
+            unit: this.units[this.currentUnit]
+        };
+    }
     put(time: number) {
         this.totalTime += this.timeToAdd(time);
         if (this.totalTime > this.divs[this.currentUnit] && this.divs[this.currentUnit + 1]) {

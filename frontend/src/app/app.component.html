@@ -1,0 +1,9 @@
+<div style="text-align:center" >
+  <h1>
+    Welcome to EPJS!
+  </h1>
+</div>
+last update: {{ date }}
+<h3>Job Count: {{stats.length}}</h3>
+<app-job *ngFor="let job of stats" [job]="job"></app-job>
+<router-outlet></router-outlet>

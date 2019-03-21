@@ -30,4 +30,13 @@ export class NodeCounter {
         return `Node: ${this.name}:\n\tin: ${this.in.prettyPrint()} \n\tout: ${this.out.prettyPrint()}\n\ttime: ${this.time.prettyPrint()}\n\n`
     }
 
+    json() {
+        return {
+            name: this.name,
+            in: this.in.json(),
+            out: this.out.json(),
+            time: this.time.json(),
+        }
+    }
+
 }

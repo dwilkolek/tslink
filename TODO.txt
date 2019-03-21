@@ -1,0 +1,8 @@
+1. move shared types away and include them in backend/frontend
+2. store jobs and config spearated
+3. make jobs recoverable
+4. run jobs in spearate threads/processes
+
+Additionals:
+1. improve user expirience
+2. add long/short running jobs and try to run it

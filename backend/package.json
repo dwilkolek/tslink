@@ -16,6 +16,8 @@
     "typescript": "^3.3.3333"
   },
   "dependencies": {
-    "rxjs": "^6.4.0"
+    "express": "^4.16.4",
+    "rxjs": "^6.4.0",
+    "uuid": "^3.3.2"
   }
 }

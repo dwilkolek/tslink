@@ -1,0 +1,7 @@
+<div class="nested">
+  <h3>
+      Job name: {{job.name}} [ {{job.uuid}} ]  <button (click)="toggle()">details</button>
+  </h3>
+  <app-stats [class.hidden]="hidden" *ngFor="let process of job.processes" [process]="process"></app-stats>
+</div>
+<hr />
