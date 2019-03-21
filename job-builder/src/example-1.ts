@@ -1,4 +1,4 @@
-export class Job {
+export class JobDefinition {
     name = 'jobs1';
     sources = {
         sources1: {
@@ -23,7 +23,7 @@ export class Job {
             }
         }
     };
-    connections = [{
+    connections = [{ 
         from: 'sources1',
         to: {
             name: 's2',

@@ -1,11 +1,11 @@
 {
-  "name": "epjs-backend",
+  "name": "epjs-job-builder",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "gulp scripts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "copy": "gulp copy"
   },
   "keywords": [],
   "author": "",
@@ -16,11 +16,5 @@
     "gulp-typescript": "^5.0.1",
     "typescript": "^3.3.3333"
   },
-  "dependencies": {
-    "express": "^4.16.4",
-    "mongodb": "^3.1.13",
-    "redis": "^2.8.0",
-    "rxjs": "^6.4.0",
-    "uuid": "^3.3.2"
-  }
+  "dependencies": {}
 }

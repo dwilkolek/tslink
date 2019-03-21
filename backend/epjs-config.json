@@ -1,0 +1,9 @@
+{
+    "cpus": 1,
+    "db" : {
+        "url": "mongodb://localhost:27017",
+        "name": "epjs"
+    },
+    "jobsDir": "../compiled-jobs",
+    "tempJobDir": "../tmp-jobs"
+}

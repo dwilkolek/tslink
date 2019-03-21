@@ -1,13 +1,13 @@
 import { MasterWorker } from "./master-worker";
 import { SlaveWorker } from "./slave-worker";
-import { EpWorker } from "./worker";
+import { EpDbWorker } from "./worker";
 
 const cluster = require('cluster');
 const os = require('os');
 
 class EPJS {
 
-    worker: EpWorker;
+    worker: EpDbWorker;    
 
     public static bootstrap() {
         return new EPJS();
