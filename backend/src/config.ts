@@ -7,4 +7,5 @@ export interface Config {
     jobsDir: string;
     port: number;
     tempJobDir: string;
+    limitJobsPerWorker: number;
 }

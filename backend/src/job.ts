@@ -1,9 +1,10 @@
-import { JobDescription, ConnectionNext } from "./job-description";
+import { ConnectionNext, JobDefinition } from "./job-definition";
 import { Stream } from "stream";
 import { CounterStore } from "./counter-store";
 import { EpReadStream } from "./streams/ep-read-stream";
 import { EpTransformStream } from "./streams/ep-transform-stream";
 import { EpWriteStream } from "./streams/ep-write-stream";
+import { JobConfigDBO } from "./db/job-config-dbo";
 const uuid = require('uuid/v4');
 const process = require('process');
 const cluster = require('cluster');
@@ -14,8 +15,8 @@ export class Job {
     private streams: { [key: string]: Stream } = {};
     private pipelines: any[] = [];
     private uuid: string;
-    constructor(private jobDescription: JobDescription) {
-        console.log('Working on:', process.pid)
+    constructor(private jobDescription: JobDefinition, private config?:JobConfigDBO) {
+        console.log('Working on:', process.pid, jobDescription, config)
         this.uuid = uuid();
         this._counterStore = new CounterStore(this.uuid, this.jobDescription.name);
         this.sourceNames.forEach(source => {

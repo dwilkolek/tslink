@@ -1,0 +1,16 @@
+<p>
+  job: <input type="file" (change)="storeJob($event)" placeholder="Upload job" accept=".js"><br />
+  name: <input [value]="name" (input)="name = $event.target.value">
+
+  <br /><br />
+  config: 
+  <input type="file" (change)="storeConfig($event)" placeholder="Upload config" accept=".json">
+</p>
+<br /><br />
+configId: <input [value]="configId" (input)="configId = $event.target.value"><br />
+jobId: <input [value]="jobId" (input)="jobId = $event.target.value">
+<button (click)="startJob()">Run Job</button>
+
+<br /><br /><br /><br />
+
+<pre>{{jobDBO | json}}</pre>

@@ -10,6 +10,7 @@ import { JobComponent } from './job/job.component';
 import { StatsComponent } from './job/stats/stats.component';
 import { TimeCounterComponent } from './job/stats/time-counter/time-counter.component';
 import { InOutCounterComponent } from './job/stats/in-out-counter/in-out-counter.component';
+import { ManagerComponent } from './manager/manager.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { InOutCounterComponent } from './job/stats/in-out-counter/in-out-counter
     JobComponent,
     StatsComponent,
     TimeCounterComponent,
-    InOutCounterComponent
+    InOutCounterComponent,
+    ManagerComponent
   ],
   imports: [
     BrowserModule,

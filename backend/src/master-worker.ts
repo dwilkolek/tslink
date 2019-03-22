@@ -2,11 +2,14 @@ const express = require('express');
 import * as path from 'path';
 import { EpDbWorker } from './worker';
 import { ConfigProvider } from './config-provider';
+import { JobDefinitionDBO } from './db/job-definition-dbo';
+import { JobDBO } from './db/job-dbo';
+import { JobStatusEnum } from './job-status-enum';
 
 const cluster = require('cluster');
 const os = require('os');
 const fs = require('fs');
-
+const fileUpload = require('express-fileupload');
 
 export class MasterWorker extends EpDbWorker {
     public app: any;
@@ -32,8 +35,8 @@ export class MasterWorker extends EpDbWorker {
         this.forkCores();
         this.initExpress();
     }
-    
-    
+
+
     runningJobs = 0;
     forkCores() {
         let cpus = os.cpus().length;
@@ -58,46 +61,44 @@ export class MasterWorker extends EpDbWorker {
     initExpress() {
         this.app = express();
 
-        const job:string = fs.readFileSync(`${ConfigProvider.get().jobsDir}/example-1.js`).toString();
-
-        
-
-        // Route our backend calls
-        // this.app.get('/api/storedJobs', (req: any, res: any) => {
-        //     console.log('files,', this.files)
-        //     res.json(this.files);
-        // });
-
-        this.app.get('/api/runAllStoredJobs', (req: any, res: any) => {
-            // console.log('files,', this.files);
-
-            // this.getRandomSlave().send({
-            //     cmd: 'runJob',
-            //     file: `${ConfigProvider.get().jobsDir}/example-1.js`
-            // });
-            // this.getRandomSlave().send({
-            //     cmd: 'runJob',
-            //     file: `${ConfigProvider.get().jobsDir}/example-2.js`
-            // });
-            // this.runningJobs++;
-            const jobToInser = <any>{
-                name: 'dupa1',
-                job: job
+        this.app.use(fileUpload());
+        this.app.post('/api/job', (req: any, res: any) => {
+            const jobDefinition = {
+                name: req.param('name'),
+                jobString: req.files.job.data.toString()
             };
-            this.db.then(db => {
-                db.collection('jobs').insertOne(jobToInser, (err:any,res:any) => {
-                    // console.log(res, err);
-                    this.getRandomSlave().send({
-                        cmd: 'runJob',
-                        id: jobToInser['_id']
-                    });                    
-                });
+            this.db.storeJobDefinition(jobDefinition, jobDefinition => {
+                res.json({ id: jobDefinition._id });
+            });
+
+        });
+
+        this.app.post('/api/config', (req: any, res: any) => {
+            this.db.storeJobConfig(JSON.parse(req.files.config.data.toString()), jobConfig => {
+                res.json({ id: jobConfig._id });
+            });
+        });
+
+        this.app.post('/api/job/start', (req: any, res: any) => {
+            const jobId = req.param('jobId');
+            const configId = req.param('configId');
+            console.log('starting', jobId, configId)
+            this.db.findJobDefinition(jobId).then(jobDefinition => {
+                this.db.findJobConfig(configId).then(jobConfig => {
+                    const jobDBO: JobDBO = {
+                        jobDefinitionId: jobId,
+                        config: jobConfig,
+                        status: JobStatusEnum.READY
+                    }
+                    this.db.storeJob(jobDBO, (job) => {
+                        res.json({ jobDBO: jobDBO });
+                    })
+                })
             })
 
-            res.json({done:true})
             
         });
-      
+
         this.app.get('*', (req: Request, res: Response) => {
             if (this.allowedExt.filter(ext => req.url.indexOf(ext) > 0).length > 0) {
                 (<any>res).sendFile(path.resolve(`${this.UI_PATH}${req.url}`));

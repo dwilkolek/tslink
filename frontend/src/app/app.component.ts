@@ -11,16 +11,16 @@ export class AppComponent {
   stats= [];
   date= new Date();
   constructor(private backend: BackendService) {
-    this.backend.getStats().subscribe(data => {
-      this.stats = <any[]>data;
-      this.date = new Date();
-    });
-    setInterval(() => {
-      this.backend.getStats().subscribe(data => {
-        this.stats = <any[]>data;
-        this.date = new Date();
-      });
-    }, 10000)
+    // this.backend.getStats().subscribe(data => {
+    //   this.stats = <any[]>data;
+    //   this.date = new Date();
+    // });
+    // setInterval(() => {
+    //   this.backend.getStats().subscribe(data => {
+    //     this.stats = <any[]>data;
+    //     this.date = new Date();
+    //   });
+    // }, 10000)
 
   }
 

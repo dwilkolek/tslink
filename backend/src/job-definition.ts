@@ -1,4 +1,4 @@
-export interface JobDescription {
+export interface JobDefinition {
     name: string,
     connections: Connection[];
     sources: { [key: string]: SourceDescription };

@@ -11,3 +11,7 @@ Additionals:
 
 DONE:
 4. run jobs in spearate threads/processes
+
+
+ERRORS:
+req.param

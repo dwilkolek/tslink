@@ -5,5 +5,6 @@
 </div>
 last update: {{ date }}
 <h3>Job Count: {{stats.length}}</h3>
+<app-manager></app-manager>
 <app-job *ngFor="let job of stats" [job]="job"></app-job>
 <router-outlet></router-outlet>
