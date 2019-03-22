@@ -30,6 +30,7 @@ export class MasterWorker extends EpDbWorker {
 
     constructor() {
         super();
+        console.log('> Welcome to epjs >')
         console.log("Master pid:", process.pid)
         this.forkCores();
         this.initExpress();
