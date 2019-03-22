@@ -8,7 +8,7 @@ export class ConfigProvider {
     config: Config;
 
     private constructor() {
-        this.config = JSON.parse(fs.readFileSync('../epjs-config.json').toString());
+        this.config = JSON.parse(fs.readFileSync('./epjs-config.json').toString());
     }
 
     public static getInstance(): ConfigProvider {

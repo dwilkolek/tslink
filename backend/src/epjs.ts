@@ -3,7 +3,6 @@ import { SlaveWorker } from "./slave-worker";
 import { EpDbWorker } from "./worker";
 
 const cluster = require('cluster');
-const os = require('os');
 
 class EPJS {
 

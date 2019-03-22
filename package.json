@@ -4,15 +4,18 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "archiver": "^3.0.0",
     "gulp": "^4.0.0",
-    "gulp-clean": "^0.4.0"
+    "gulp-clean": "^0.4.0",
+    "pkg": "^4.3.7"
   },
   "devDependencies": {},
   "scripts": {
     "clean": "gulp clean",
-    "buildBackend": "cd backend && npm install && npm run build && cd ..",
-    "buildFrontend": "cd frontend && npm install && npm run buildProd && cd ..",
-    "build": "npm run clean && npm run buildBackend && npm run buildFrontend"
+    "releaseBackend": "cd backend && npm install && npm run release && cd ..",
+    "releaseFrontend": "cd frontend && npm install && npm run release && cd ..",
+    "release-subprojects": "npm run clean && npm run releaseBackend && npm run releaseFrontend",    
+    "release": "npm run release-subprojects && gulp release"
   },
   "repository": {
     "type": "git",

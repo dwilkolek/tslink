@@ -3,7 +3,6 @@ import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { PrettyprintPipe } from './prettyprint.pipe';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BackendService } from './backend.service';
 import { JobComponent } from './job/job.component';
@@ -15,7 +14,6 @@ import { ManagerComponent } from './manager/manager.component';
 @NgModule({
   declarations: [
     AppComponent,
-    PrettyprintPipe,
     JobComponent,
     StatsComponent,
     TimeCounterComponent,

@@ -10,13 +10,12 @@ const cluster = require('cluster');
 const os = require('os');
 const fs = require('fs');
 const fileUpload = require('express-fileupload');
-
 export class MasterWorker extends EpDbWorker {
     public app: any;
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
-    private UI_PATH = '../../frontend/dist/frontend/';
+    private UI_PATH = 'ui/';
     private allowedExt = [
         '.js',
         '.ico',
@@ -39,7 +38,7 @@ export class MasterWorker extends EpDbWorker {
 
     runningJobs = 0;
     forkCores() {
-        let cpus = os.cpus().length;
+        let cpus = ConfigProvider.get().cpus || os.cpus().length;
         const args = <string[]>process.argv;
         args.forEach(arg => {
             if (arg.indexOf('cpu=') > -1) {

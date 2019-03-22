@@ -6,8 +6,8 @@ import { JobStatusEnum } from "./job-status-enum";
 import { JobDBO } from "./db/job-dbo";
 import { join } from "path";
 import { JobConfigDBO } from "./db/job-config-dbo";
-var ObjectId = require('mongodb').ObjectID;
 const fs = require('fs');
+const path = require('path');
 
 export class SlaveWorker extends EpDbWorker {
 
@@ -24,11 +24,21 @@ export class SlaveWorker extends EpDbWorker {
         //         })
         //     }
         // });
+        this.createDirForTempJobs();
         setInterval(() => {
             if (this.jobs.length < ConfigProvider.get().limitJobsPerWorker) {
                 this.huntForJobs();
             }
-        }, 1000)
+        }, 10000)
+    }
+
+    createDirForTempJobs() {
+        try {
+            fs.mkdirSync(ConfigProvider.get().tempJobDir, 0o744);
+        } catch (e) { };
+        try {
+            fs.mkdirSync(this.getSystemPath(ConfigProvider.get().tempJobDir), 0o744);
+        } catch (e) { };
     }
 
     huntForJobs() {
@@ -43,15 +53,20 @@ export class SlaveWorker extends EpDbWorker {
 
     storeToDiskJobDefinition(jobDefinitionDBO: JobDefinitionDBO, config: JobConfigDBO) {
         const dir = `${ConfigProvider.get().tempJobDir}/${jobDefinitionDBO._id}-${new Date().getTime()}`
-        const jobFilename = `${dir}/job.js`;
-        const configFilename = `${dir}/config.json`;
-        fs.mkdirSync(dir, 0o744);
-        fs.writeFileSync(`${dir}/pid-${process.pid}`, '');
+        const newDir = this.getSystemPath(dir);
+        console.log(dir, newDir)
+        const jobFilename = `${newDir}/job.js`;
+        const configFilename = `${newDir}/config.json`;
+        fs.mkdirSync(newDir, 0o744);
+        fs.writeFileSync(`${newDir}/pid-${process.pid}`, '');
         fs.writeFileSync(jobFilename, jobDefinitionDBO.jobString);
         fs.writeFileSync(configFilename, JSON.stringify(config));
         return jobFilename;
     }
 
+    getSystemPath(file: string) {
+        return path.join(path.dirname(process.execPath), file);
+    }
 
     public runJob = (jobFilename: string, config: JobConfigDBO) => {
         (async () => {
