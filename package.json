@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "gulp": "^4.0.0",
+    "gulp-clean": "^0.4.0"
+  },
   "devDependencies": {},
   "scripts": {
+    "clean": "gulp clean",
     "buildBackend": "cd backend && npm install && npm run build && cd ..",
     "buildFrontend": "cd frontend && npm install && npm run buildProd && cd ..",
-    "build": "npm run buildBackend && npm run buildFrontend"
+    "build": "npm run clean && npm run buildBackend && npm run buildFrontend"
   },
   "repository": {
     "type": "git",
