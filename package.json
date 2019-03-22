@@ -6,9 +6,9 @@
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
-    "buildBackend": "cd backend & npm install & npm run build & cd ..",
-    "buildFrontend": "cd frontend & npm install & npm run buildProd & cd ..",
-    "build": "npm run buildBackend & npm run buildFrontend"
+    "buildBackend": "cd backend && npm install && npm run build && cd ..",
+    "buildFrontend": "cd frontend && npm install && npm run buildProd && cd ..",
+    "build": "npm run buildBackend && npm run buildFrontend"
   },
   "repository": {
     "type": "git",
