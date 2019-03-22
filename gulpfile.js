@@ -4,7 +4,7 @@ const fs = require('fs');
 const { exec } = require('pkg')
 
 gulp.task('clean', function () {
-    return gulp.src(['dist', 'backend/dist', 'frontend/dist', 'backend/tmp-jobs/*'], { read: false, allowEmpty: true })
+    return gulp.src(['dist', 'backend/dist', 'frontend/dist'], { read: false, allowEmpty: true })
         .pipe(clean());
 });
 

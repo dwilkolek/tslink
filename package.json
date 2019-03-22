@@ -12,10 +12,11 @@
   "devDependencies": {},
   "scripts": {
     "clean": "gulp clean",
-    "releaseBackend": "cd backend && npm install && npm run release && cd ..",
-    "releaseFrontend": "cd frontend && npm install && npm run release && cd ..",
-    "release-subprojects": "npm run clean && npm run releaseBackend && npm run releaseFrontend",    
-    "release": "npm run release-subprojects && gulp release"
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install && cd ..",
+    "releaseBackend": "cd backend && npm run release && cd ..",
+    "releaseFrontend": "cd frontend && npm run release && cd ..",
+    "release-subprojects": "npm run releaseBackend && npm run releaseFrontend",
+    "release": "npm run clean && npm run release-subprojects && gulp release"
   },
   "repository": {
     "type": "git",

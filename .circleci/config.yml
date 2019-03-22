@@ -26,6 +26,24 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
+      - run: cd backend 
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-backend-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-backend-
+
+      - run: cd ../frontend 
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-frontend-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-frontend-
+      
+      - run: cd ..
+
       - run: npm install
 
       - save_cache:
@@ -35,5 +53,25 @@ jobs:
             - frontend/node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      # run tests!
+      - run: cd backend
+
+      - save_cache:
+          paths:
+            - node_modules
+            - backend/node_modules
+            - frontend/node_modules
+          key: v1-dependencies-backend-{{ checksum "package.json" }}
+
+      - run: cd frontend
+
+      - save_cache:
+          paths:
+            - node_modules
+            - backend/node_modules
+            - frontend/node_modules
+          key: v1-dependencies-frontend-{{ checksum "package.json" }}
+
+      - run: cd ..
+
+      # run test release!
       - run: npm run release
