@@ -32,6 +32,11 @@ export class MasterWorker extends EpDbWorker {
         super();
         console.log('> Welcome to epjs >')
         console.log("Master pid:", process.pid)
+        
+        if (ConfigProvider.isDev) {
+            console.warn('RUNNING IN DEVELOPMENT MODE.')
+        }
+
         this.forkCores();
         this.initExpress();
     }

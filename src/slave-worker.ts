@@ -34,9 +34,6 @@ export class SlaveWorker extends EpDbWorker {
 
     createDirForTempJobs() {
         try {
-            fs.mkdirSync(ConfigProvider.get().tempJobDir, 0o744);
-        } catch (e) { };
-        try {
             fs.mkdirSync(this.getSystemPath(ConfigProvider.get().tempJobDir), 0o744);
         } catch (e) { };
     }
@@ -55,9 +52,10 @@ export class SlaveWorker extends EpDbWorker {
         const dir = `${ConfigProvider.get().tempJobDir}/${jobDefinitionDBO._id}-${new Date().getTime()}`
         const newDir = this.getSystemPath(dir);
         console.log(dir, newDir)
-        const jobFilename = `${newDir}/job.js`;
-        const configFilename = `${newDir}/config.json`;
+        const jobFilename = path.join(newDir, 'job.js');
+        const configFilename = path.join(newDir, 'config.json');
         fs.mkdirSync(newDir, 0o744);
+        console.log('Created job directory', newDir)
         fs.writeFileSync(`${newDir}/pid-${process.pid}`, '');
         fs.writeFileSync(jobFilename, jobDefinitionDBO.jobString);
         fs.writeFileSync(configFilename, JSON.stringify(config));
@@ -65,7 +63,12 @@ export class SlaveWorker extends EpDbWorker {
     }
 
     getSystemPath(file: string) {
-        return path.join(path.dirname(process.execPath), file);
+        if (ConfigProvider.isDev) {
+            return path.resolve(file);
+        } else {
+            return path.join(path.dirname(process.execPath), file);
+        }
+
     }
 
     public runJob = (jobFilename: string, config: JobConfigDBO) => {
