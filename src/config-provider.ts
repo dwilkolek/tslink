@@ -30,6 +30,8 @@ export class ConfigProvider {
     }
     public static isDev = process.argv.filter(arg => arg==='dev').length === 1;
 
+    public static uiPath = ConfigProvider.isDev ?  './ui/dist/ui/' : '../ui/dist/ui/';
+
     public static getInstance(): ConfigProvider {
         if (!this._instance) {
             this._instance = new ConfigProvider();

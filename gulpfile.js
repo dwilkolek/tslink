@@ -5,7 +5,7 @@ var clean = require('gulp-clean');
 const { exec } = require('pkg')
 
 gulp.task('clean', function () {
-  return gulp.src(['release', 'dist', 'frontend/dist'], { read: false, allowEmpty: true })
+  return gulp.src(['release', 'dist', 'ui/dist'], { read: false, allowEmpty: true })
       .pipe(clean());
 });
 

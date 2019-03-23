@@ -22,7 +22,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "package.json" }}-{{ checksum "frontend/package.json" }}
+            - v1-dependencies-{{ checksum "package.json" }}-{{ checksum "ui/package.json" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
@@ -31,8 +31,8 @@ jobs:
       - save_cache:
           paths:
             - node_modules
-            - frontend/node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}-{{ checksum "frontend/package.json" }}
+            - ui/node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}-{{ checksum "ui/package.json" }}
           
       # run test release!
       - run: npm run release

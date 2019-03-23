@@ -4,16 +4,16 @@
   "description": "",
   "main": "epjs.js",
   "scripts": {
-    "preinstall": "cd frontend && npm install && cd ..",
+    "preinstall": "cd ui && npm install && cd ..",
     "clean": "gulp clean",
     "build": "gulp scripts",
-    "prerelease": "gulp scripts && cd frontend && npm run release && cd ..",
+    "prerelease": "gulp scripts && cd ui && npm run release && cd ..",
     "release": "npm run pkg-backend",
     "pkg-windows": "pkg dist/epjs.js --target node10-win-x64 --output release/epjs.exe",
     "pkg-linux": "pkg dist/epjs.js --target node10-linux-x64 --output release/epjs",
     "pkg-mac": "pkg dist/epjs.js --target node10-mac-x64 --output release/epjs.app",
     "pkg-backend": "npm run pkg-windows && npm run pkg-linux",
-    "npm start": "node ./dist/epjs.js dev"
+    "start": "node ./dist/epjs.js dev"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +34,6 @@
     "uuid": "^3.3.2"
   },
   "pkg": {
-    "assets": "frontend/dist/ui/**/*"
+    "assets": "ui/dist/ui/**/*"
   }
 }

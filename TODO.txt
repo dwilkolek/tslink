@@ -1,6 +1,5 @@
 TODO:
 1. move shared types away and include them in backend/frontend
-2. store jobs and config spearated
 3. make jobs recoverable
 
 
@@ -11,6 +10,7 @@ Additionals:
 
 DONE:
 4. run jobs in spearate threads/processes
+2. store jobs and config spearated
 
 
 ERRORS:

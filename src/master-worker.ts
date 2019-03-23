@@ -15,7 +15,7 @@ export class MasterWorker extends EpDbWorker {
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
-    private UI_PATH = '../frontend/dist/ui/';
+
     private allowedExt = [
         '.js',
         '.ico',
@@ -106,9 +106,9 @@ export class MasterWorker extends EpDbWorker {
 
         this.app.get('*', (req: Request, res: Response) => {
             if (this.allowedExt.filter(ext => req.url.indexOf(ext) > 0).length > 0) {
-                (<any>res).sendFile(path.resolve(`${this.UI_PATH}${req.url}`));
+                (<any>res).sendFile(path.resolve(`${ConfigProvider.uiPath}${req.url}`));
             } else {
-                (<any>res).sendFile(path.resolve(`${this.UI_PATH}index.html`));
+                (<any>res).sendFile(path.resolve(`${ConfigProvider.uiPath}index.html`));
             }
         });
 
