@@ -6,6 +6,7 @@ import { JobStatusEnum } from "./job-status-enum";
 import { JobDBO } from "./db/job-dbo";
 import { join } from "path";
 import { JobConfigDBO } from "./db/job-config-dbo";
+import { FileProvider } from "./file-provider";
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +16,7 @@ export class SlaveWorker extends EpDbWorker {
 
     constructor() {
         super();
+
         // process.on('message', msg => {
         //     console.log('message', msg)
         //     if (msg.cmd = 'runJob' && !!msg.id) {
@@ -34,7 +36,7 @@ export class SlaveWorker extends EpDbWorker {
 
     createDirForTempJobs() {
         try {
-            fs.mkdirSync(this.getSystemPath(ConfigProvider.get().tempJobDir), 0o744);
+            fs.mkdirSync(FileProvider.getSystemPath(ConfigProvider.get().tempJobDir), 0o744);
         } catch (e) { };
     }
 
@@ -50,7 +52,7 @@ export class SlaveWorker extends EpDbWorker {
 
     storeToDiskJobDefinition(jobDefinitionDBO: JobDefinitionDBO, config: JobConfigDBO) {
         const dir = `${ConfigProvider.get().tempJobDir}/${jobDefinitionDBO._id}-${new Date().getTime()}`
-        const newDir = this.getSystemPath(dir);
+        const newDir = FileProvider.getSystemPath(dir);
         console.log(dir, newDir)
         const jobFilename = path.join(newDir, 'job.js');
         const configFilename = path.join(newDir, 'config.json');
@@ -62,19 +64,11 @@ export class SlaveWorker extends EpDbWorker {
         return jobFilename;
     }
 
-    getSystemPath(file: string) {
-        if (ConfigProvider.isDev) {
-            return path.resolve(file);
-        } else {
-            return path.join(path.dirname(process.execPath), file);
-        }
-
-    }
 
     public runJob = (jobFilename: string, config: JobConfigDBO) => {
         (async () => {
             let fns = await import(jobFilename);
-            const job = new Job(new fns.JobDefinition(), config);
+            const job = new Job(fns.default(), config);
             this.jobs.push(job);
             job.run();
         })().catch(e => {

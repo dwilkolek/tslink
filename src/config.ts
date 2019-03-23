@@ -7,4 +7,5 @@ export interface Config {
     port?: number;
     tempJobDir: string;
     limitJobsPerWorker: number;
+    additionalDependencyDirectory: string;
 }

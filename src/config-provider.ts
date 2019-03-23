@@ -15,7 +15,8 @@ export class ConfigProvider {
                 "name": "epjs"
             },
             tempJobDir: "./tmp-jobs",
-            limitJobsPerWorker: 1
+            limitJobsPerWorker: 1,
+            additionalDependencyDirectory : (ConfigProvider.isDev ? '../dependencies' : './dependencies')
         };
 
         if (process.argv.filter(arg => arg==='dev').length === 1) {
@@ -31,6 +32,7 @@ export class ConfigProvider {
     public static isDev = process.argv.filter(arg => arg==='dev').length === 1;
 
     public static uiPath = ConfigProvider.isDev ?  './ui/dist/ui/' : '../ui/dist/ui/';
+    public static depsPath = './modules';
 
     public static getInstance(): ConfigProvider {
         if (!this._instance) {
