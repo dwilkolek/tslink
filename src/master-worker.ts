@@ -15,7 +15,7 @@ export class MasterWorker extends EpDbWorker {
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
-    private UI_PATH = 'ui/';
+    private UI_PATH = '../frontend/dist/ui/';
     private allowedExt = [
         '.js',
         '.ico',

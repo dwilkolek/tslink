@@ -2,31 +2,37 @@
   "name": "epjs",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "dependencies": {
-    "archiver": "^3.0.0",
-    "gulp": "^4.0.0",
-    "gulp-clean": "^0.4.0",
-    "pkg": "^4.3.7"
-  },
-  "devDependencies": {},
+  "main": "epjs.js",
   "scripts": {
+    "preinstall": "cd frontend && npm install && cd ..",
     "clean": "gulp clean",
-    "postinstall": "cd backend && npm install && cd ../frontend && npm install && cd ..",
-    "releaseBackend": "cd backend && npm run release && cd ..",
-    "releaseFrontend": "cd frontend && npm run release && cd ..",
-    "release-subprojects": "npm run releaseBackend && npm run releaseFrontend",
-    "release": "npm run clean && npm run release-subprojects && gulp release"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dwilkolek/epjs.git"
+    "build": "gulp scripts",
+    "prerelease": "gulp scripts && cd frontend && npm run release & cd ..",
+    "release": "npm run pkg-backend",
+    "pkg-windows": "pkg dist/epjs.js --target node10-win-x64 --output release/epjs.exe",
+    "pkg-linux": "pkg dist/epjs.js --target node10-linux-x64 --output release/epjs",
+    "pkg-mac": "pkg dist/epjs.js --target node10-mac-x64 --output release/epjs.app",
+    "pkg-backend": "npm run pkg-windows && npm run pkg-linux"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/dwilkolek/epjs/issues"
+  "devDependencies": {
+    "@types/node": "^11.11.3",
+    "gulp": "^4.0.0",
+    "gulp-typescript": "^5.0.1",
+    "gulp-clean": "^0.4.0",
+    "typescript": "^3.3.3333",
+    "pkg": "^4.3.7"
   },
-  "homepage": "https://github.com/dwilkolek/epjs#readme"
+  "dependencies": {
+    "express": "^4.16.4",
+    "express-fileupload": "^1.1.3-alpha.1",
+    "mongodb": "^3.1.13",
+    "rxjs": "^6.4.0",
+    "uuid": "^3.3.2"
+  },
+  "pkg": {
+    "assets": "frontend/dist/ui/**/*"
+  }
 }
