@@ -13,7 +13,7 @@
     "pkg-linux": "pkg dist/epjs.js --target node10-linux-x64 --output release/epjs",
     "pkg-mac": "pkg dist/epjs.js --target node10-mac-x64 --output release/epjs.app",
     "pkg-backend": "npm run pkg-windows && npm run pkg-linux",
-    "start": "node ./dist/epjs.js dev"
+    "start": "npm run build && node ./dist/epjs.js dev"
   },
   "keywords": [],
   "author": "",

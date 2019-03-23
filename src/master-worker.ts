@@ -1,4 +1,5 @@
 const express = require('express');
+
 import * as path from 'path';
 import { EpDbWorker } from './worker';
 import { ConfigProvider } from './config-provider';
@@ -32,7 +33,7 @@ export class MasterWorker extends EpDbWorker {
         super();
         console.log('> Welcome to epjs >')
         console.log("Master pid:", process.pid)
-        
+
         if (ConfigProvider.isDev) {
             console.warn('RUNNING IN DEVELOPMENT MODE.')
         }
@@ -67,12 +68,22 @@ export class MasterWorker extends EpDbWorker {
         this.app = express();
 
         this.app.use(fileUpload());
+
+        if (ConfigProvider.isDev) {
+            this.app.use(function (req: any, res: any, next: any) {
+                res.header("Access-Control-Allow-Origin", "*");
+                res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+                next();
+            });
+        }
+
         this.app.post('/api/job', (req: any, res: any) => {
             const jobDefinition = {
                 name: req.param('name'),
                 jobString: req.files.job.data.toString()
             };
             this.db.storeJobDefinition(jobDefinition, jobDefinition => {
+                res.set('Content-Type', 'application/json');
                 res.json({ id: jobDefinition._id });
             });
 
@@ -80,6 +91,7 @@ export class MasterWorker extends EpDbWorker {
 
         this.app.post('/api/config', (req: any, res: any) => {
             this.db.storeJobConfig(JSON.parse(req.files.config.data.toString()), jobConfig => {
+                res.set('Content-Type', 'application/json');
                 res.json({ id: jobConfig._id });
             });
         });
@@ -96,12 +108,13 @@ export class MasterWorker extends EpDbWorker {
                         status: JobStatusEnum.READY
                     }
                     this.db.storeJob(jobDBO, (job) => {
+                        res.set('Content-Type', 'application/json');
                         res.json({ jobDBO: jobDBO });
                     })
                 })
             })
 
-            
+
         });
 
         this.app.get('*', (req: Request, res: Response) => {
