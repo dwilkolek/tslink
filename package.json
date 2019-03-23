@@ -7,7 +7,7 @@
     "preinstall": "cd frontend && npm install && cd ..",
     "clean": "gulp clean",
     "build": "gulp scripts",
-    "prerelease": "gulp scripts && cd frontend && npm run release & cd ..",
+    "prerelease": "gulp scripts && cd frontend && npm run release && cd ..",
     "release": "npm run pkg-backend",
     "pkg-windows": "pkg dist/epjs.js --target node10-win-x64 --output release/epjs.exe",
     "pkg-linux": "pkg dist/epjs.js --target node10-linux-x64 --output release/epjs",
