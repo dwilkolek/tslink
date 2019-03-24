@@ -6,10 +6,14 @@ import { ConfigProvider } from './config-provider';
 import { JobDefinitionDBO } from './db/job-definition-dbo';
 import { JobDBO } from './db/job-dbo';
 import { JobStatusEnum } from './job-status-enum';
+import { FileProvider } from './file-provider';
+import { JobConfigDBO } from './db/job-config-dbo';
 
 const cluster = require('cluster');
 const os = require('os');
 const fs = require('fs');
+const unzip = require('unzip');
+
 const fileUpload = require('express-fileupload');
 export class MasterWorker extends EpDbWorker {
     public app: any;
@@ -79,11 +83,12 @@ export class MasterWorker extends EpDbWorker {
 
         this.app.post('/api/job', (req: any, res: any) => {
             const jobDefinition = {
-                name: req.param('name'),
-                jobString: req.files.job.data.toString()
+                name: req.param('name')
             };
             this.db.storeJobDefinition(jobDefinition, jobDefinition => {
                 res.set('Content-Type', 'application/json');
+                this.storeToDisk(req.files.job.data, jobDefinition._id || '');
+
                 res.json({ id: jobDefinition._id });
             });
 
@@ -135,6 +140,26 @@ export class MasterWorker extends EpDbWorker {
             console.log(error);
         });
 
+    }
+
+    storeToDisk(data: any, jobId: string) {
+        const pathZip = path.join(FileProvider.getSystemPath('zips'), jobId + '.zip');
+        fs.writeFileSync(pathZip, data);
+        fs.createReadStream(pathZip).pipe(
+            unzip.Extract(
+                { path: `${FileProvider.getSystemPath(ConfigProvider.get().tempJobDir)}/${jobId}` }
+            )
+        );
+        // const dir = `${ConfigProvider.get().tempJobDir}/${jobDefinitionDBO._id}`
+        // const newDir = FileProvider.getSystemPath(dir);
+        // console.log(dir, newDir)
+        // const jobFilename = path.join(newDir, 'job.js');
+        // const configFilename = path.join(newDir, 'config.json');
+        // fs.mkdirSync(newDir, 0o744);
+        // console.log('Created job directory', newDir)
+        // fs.createReadStream('path/to/archive.zip').pipe(unzip.Extract({ path: 'output/path' }))
+        // // fs.writeFileSync(configFilename, JSON.stringify(config));
+        // return jobFilename;
     }
 
     getRandomSlave() {

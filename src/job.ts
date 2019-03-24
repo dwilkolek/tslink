@@ -1,4 +1,3 @@
-import { ConnectionNext, JobDefinition } from "./job-definition";
 import { Stream } from "stream";
 import { CounterStore } from "./counter-store";
 import { EpReadStream } from "./streams/ep-read-stream";
@@ -8,6 +7,9 @@ import { JobConfigDBO } from "./db/job-config-dbo";
 const uuid = require('uuid/v4');
 const process = require('process');
 const cluster = require('cluster');
+import { Readable } from "stream";
+import { JobDefinitionInterface } from "./types/job-definition-interface";
+import { ConnectionNext } from "./types/connection-next";
 
 export class Job {
 
@@ -15,7 +17,7 @@ export class Job {
     private streams: { [key: string]: Stream } = {};
     private pipelines: any[] = [];
     private uuid: string;
-    constructor(private jobDescription: JobDefinition, private config?:JobConfigDBO) {
+    constructor(private jobDescription: JobDefinitionInterface, private config?:JobConfigDBO) {
         console.log('Working on:', process.pid, jobDescription, config)
         this.uuid = uuid();
         this._counterStore = new CounterStore(this.uuid, this.jobDescription.name);
@@ -95,7 +97,7 @@ export class Job {
     private getWriteStream(name: string) {
         const sinkNode = this.jobDescription.sinks[name];
         if (sinkNode) {
-            return new EpWriteStream(5, sinkNode.write)
+            return this.jobDescription.sinks[name].get()
         }
         return null;
     }
@@ -103,13 +105,13 @@ export class Job {
     private getTransformStream(name: string) {
         const transformNode = this.jobDescription.transformers[name];
         if (transformNode) {
-            return new EpTransformStream(5, this.counterStore.counters[name].time, transformNode.transform)
+            return transformNode.get();
         }
         return null;
     }
 
-    private getReadStream(name: string) {
-        return new EpReadStream(5, this.jobDescription.sources[name].produce);
+    private getReadStream(name: string): Readable {
+        return this.jobDescription.sources[name].get();
 
     }
 

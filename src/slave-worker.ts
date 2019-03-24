@@ -42,32 +42,21 @@ export class SlaveWorker extends EpDbWorker {
 
     huntForJobs() {
         this.db.findJobByStatusAndRun(JobStatusEnum.READY).then((job: JobDBO) => {
-            if (job && job._id) {
-                this.db.findJobDefinition(job.jobDefinitionId).then(jobDef => {
-                    this.runJob(this.storeToDiskJobDefinition(jobDef, job.config), job.config)
-                })
+            if (job && job.jobDefinitionId) {
+                // this.db.findJobDefinition(job.jobDefinitionId).then(jobDef => {
+                    this.runJob(job.jobDefinitionId, job.config)
+                // })
             }
         });
     }
 
-    storeToDiskJobDefinition(jobDefinitionDBO: JobDefinitionDBO, config: JobConfigDBO) {
-        const dir = `${ConfigProvider.get().tempJobDir}/${jobDefinitionDBO._id}-${new Date().getTime()}`
-        const newDir = FileProvider.getSystemPath(dir);
-        console.log(dir, newDir)
-        const jobFilename = path.join(newDir, 'job.js');
-        const configFilename = path.join(newDir, 'config.json');
-        fs.mkdirSync(newDir, 0o744);
-        console.log('Created job directory', newDir)
-        fs.writeFileSync(`${newDir}/pid-${process.pid}`, '');
-        fs.writeFileSync(jobFilename, jobDefinitionDBO.jobString);
-        fs.writeFileSync(configFilename, JSON.stringify(config));
-        return jobFilename;
-    }
+    
 
 
-    public runJob = (jobFilename: string, config: JobConfigDBO) => {
+    public runJob = (jobId: string, config: JobConfigDBO) => {
+        const jobfilename:string = path.resolve(`${FileProvider.getSystemPath(ConfigProvider.get().tempJobDir)}/${jobId}/job.js`);
         (async () => {
-            let fns = await import(jobFilename);
+            let fns = await import(jobfilename);
             const job = new Job(fns.default(), config);
             this.jobs.push(job);
             job.run();
