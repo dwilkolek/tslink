@@ -1,6 +1,7 @@
 export enum JobStatusEnum {
-    ABORTED = 'ABORTED',
+    FAILED = 'FAILED',
+    FAILED_TO_START = 'FAILED_TO_START',
     FINISHED = 'FINISHED',
-    READY = 'READY',
+    STORED = 'STORED',
     PROCESSING = 'PROCESSING',
 }

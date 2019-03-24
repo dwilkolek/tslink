@@ -3,11 +3,9 @@ const express = require('express');
 import * as path from 'path';
 import { EpDbWorker } from './worker';
 import { ConfigProvider } from './config-provider';
-import { JobDefinitionDBO } from './db/job-definition-dbo';
-import { JobDBO } from './db/job-dbo';
 import { JobStatusEnum } from './job-status-enum';
 import { FileProvider } from './file-provider';
-import { JobConfigDBO } from './db/job-config-dbo';
+import { JobDBO } from './types/job-dbo';
 
 const cluster = require('cluster');
 const os = require('os');
@@ -44,29 +42,27 @@ export class MasterWorker extends EpDbWorker {
 
         this.forkCores();
         this.initExpress();
+        this.createDirectories();
     }
 
 
     runningJobs = 0;
     forkCores() {
         let cpus = ConfigProvider.get().cpus || os.cpus().length;
-        const args = <string[]>process.argv;
-        args.forEach(arg => {
-            if (arg.indexOf('cpu=') > -1) {
-                const configCpus = parseInt(arg.replace('cpu=', ''));
-                //TODO: maybe enable forking to more than have?
-                if (configCpus <= cpus) {
-                    cpus = configCpus
-                } else {
-                    console.warn(`Set more cpus that possibles. Fallback to: ${cpus}cpus`);
-                }
-            }
-        })
         console.log(`Forking for ${cpus} CPUs`);
         for (let i = 0; i < cpus; i++) {
             cluster.fork();
         }
     }
+
+
+    createDirectories() {
+        FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory));
+        FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().tempZipDirectory));
+    }
+
+
+    
 
     initExpress() {
         this.app = express();
@@ -110,7 +106,7 @@ export class MasterWorker extends EpDbWorker {
                     const jobDBO: JobDBO = {
                         jobDefinitionId: jobId,
                         config: jobConfig,
-                        status: JobStatusEnum.READY
+                        status: JobStatusEnum.STORED
                     }
                     this.db.storeJob(jobDBO, (job) => {
                         res.set('Content-Type', 'application/json');
@@ -123,7 +119,7 @@ export class MasterWorker extends EpDbWorker {
         });
 
         this.app.get('*', (req: Request, res: Response) => {
-            var url = path.resolve(path.join(__dirname, ConfigProvider.uiPath));
+            const url = path.resolve(path.join(__dirname, ConfigProvider.uiPath));
             if (this.allowedExt.filter(ext => req.url.indexOf(ext) > 0).length > 0) {
                 (<any>res).sendFile(`${url}${req.url}`);
             } else {
@@ -144,23 +140,13 @@ export class MasterWorker extends EpDbWorker {
     }
 
     storeToDisk(data: any, jobId: string) {
-        const pathZip = path.join(FileProvider.getSystemPath('zips'), jobId + '.zip');
+        const pathZip = path.join(FileProvider.getSystemPath(ConfigProvider.get().tempZipDirectory), jobId + '.zip');
         fs.writeFileSync(pathZip, data);
         fs.createReadStream(pathZip).pipe(
             unzip.Extract(
-                { path: `${FileProvider.getSystemPath(ConfigProvider.get().tempJobDir)}/${jobId}` }
+                { path: `${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}` }
             )
         );
-        // const dir = `${ConfigProvider.get().tempJobDir}/${jobDefinitionDBO._id}`
-        // const newDir = FileProvider.getSystemPath(dir);
-        // console.log(dir, newDir)
-        // const jobFilename = path.join(newDir, 'job.js');
-        // const configFilename = path.join(newDir, 'config.json');
-        // fs.mkdirSync(newDir, 0o744);
-        // console.log('Created job directory', newDir)
-        // fs.createReadStream('path/to/archive.zip').pipe(unzip.Extract({ path: 'output/path' }))
-        // // fs.writeFileSync(configFilename, JSON.stringify(config));
-        // return jobFilename;
     }
 
     getRandomSlave() {

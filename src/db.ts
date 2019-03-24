@@ -1,8 +1,9 @@
 import { ConfigProvider } from "./config-provider";
-import { JobDefinitionDBO } from "./db/job-definition-dbo";
-import { JobConfigDBO } from "./db/job-config-dbo";
+
 import { JobStatusEnum } from "./job-status-enum";
-import { JobDBO } from "./db/job-dbo";
+import { JobDefinitionDBO } from "./types/job-definition-dbo";
+import { JobDBO } from "./types/job-dbo";
+import { JobConfig } from "./types/job-config";
 
 const MongoClient = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectId;
@@ -20,7 +21,7 @@ export class Db {
         })
     }
 
-    public storeJobConfig(jobConfig: JobConfigDBO, callback: (jobConfigDBO: JobConfigDBO) => void) {
+    public storeJobConfig(jobConfig: JobConfig, callback: (JobConfig: JobConfig) => void) {
         this.jobsConfigs.then((collection: any) => {
             collection.insertOne(jobConfig, (err: any, res: any) => {
                 callback(jobConfig);
@@ -28,87 +29,96 @@ export class Db {
         })
     }
 
-    public storeJob(job: JobDBO, callback: (job: JobDBO) => void) {
+    public updateJob(jobDBO: JobDBO, callback?: (jobDBO: JobDBO) => void) {
         this.jobs.then((collection: any) => {
-            collection.insertOne(job, (err: any, res: any) => {
-                callback(job);
-            });
-        })
+            collection.updateOne({ _id: jobDBO._id }, { $set: jobDBO }, function (err, res) {
+                console.error('error update', err);
+                callback && callback(jobDBO);
+            })
+        });
     }
+
+    public storeJob(job: JobDBO, callback: (job: JobDBO) => void) {
+                this.jobs.then((collection: any) => {
+                    collection.insertOne(job, (err: any, res: any) => {
+                        callback(job);
+                    });
+                })
+            }
 
     public findJobByStatusAndRun(status: JobStatusEnum) {
-        return this.jobs.then((collection: any) => {
-            return new Promise<JobDBO>(resolve => {
-                collection.findOneAndUpdate({ "status": 'READY' }, { $set: { "status": JobStatusEnum.PROCESSING, startDateTime: new Date() } }, { returnNewDocument: true }, (err: any, doc: any) => {
-                    resolve(<JobDBO>doc.value);
-                });
-            })
-        })
-    }
+                return this.jobs.then((collection: any) => {
+                    return new Promise<JobDBO>(resolve => {
+                        collection.findOneAndUpdate({ "status": status }, { $set: { "status": JobStatusEnum.PROCESSING, startDateTime: new Date() } }, { returnNewDocument: true }, (err: any, doc: any) => {
+                            resolve(<JobDBO>doc.value);
+                        });
+                    })
+                })
+            }
 
-    public findJobDefinition(_id: string): Promise<JobDefinitionDBO> {
-        return this.jobsDefinitions.then((collection: any) => {
-            return new Promise<JobDefinitionDBO>(resolve => {
-                collection.findOne({ "_id": new ObjectId(_id) }, (err: any, doc: JobDefinitionDBO) => {
-                    resolve(<JobDefinitionDBO>doc);
-                });
-            })
-        })
-    }
+    public findJobDefinition(_id: string): Promise < JobDefinitionDBO > {
+                return this.jobsDefinitions.then((collection: any) => {
+                    return new Promise<JobDefinitionDBO>(resolve => {
+                        collection.findOne({ "_id": new ObjectId(_id) }, (err: any, doc: JobDefinitionDBO) => {
+                            resolve(<JobDefinitionDBO>doc);
+                        });
+                    })
+                })
+            }
 
-    public findJobConfig(_id: string): Promise<JobConfigDBO> {
-        return this.jobsConfigs.then((collection: any) => {
-            return new Promise<JobConfigDBO>(resolve => {
-                collection.findOne({ "_id": new ObjectId(_id) }, (err: any, doc: JobConfigDBO) => {
-                    resolve(<JobConfigDBO>doc);
-                });
-            })
-        })
-    }
+    public findJobConfig(_id: string): Promise < JobConfig > {
+                return this.jobsConfigs.then((collection: any) => {
+                    return new Promise<JobConfig>(resolve => {
+                        collection.findOne({ "_id": new ObjectId(_id) }, (err: any, doc: JobConfig) => {
+                            resolve(<JobConfig>doc);
+                        });
+                    })
+                })
+            }
 
 
     private get jobsDefinitions() {
-        return this.db.then(db => {
-            return new Promise(resolve =>
-                resolve(db.collection('job-definitions'))
-            );
-        })
-    }
+                return this.db.then(db => {
+                    return new Promise(resolve =>
+                        resolve(db.collection('job-definitions'))
+                    );
+                })
+            }
 
     private get jobsConfigs() {
-        return this.db.then(db => {
-            return new Promise(resolve =>
-                resolve(db.collection('job-configs'))
-            );
-        })
-    }
+                return this.db.then(db => {
+                    return new Promise(resolve =>
+                        resolve(db.collection('job-configs'))
+                    );
+                })
+            }
 
     private get jobs() {
-        return this.db.then(db => {
-            return new Promise(resolve =>
-                resolve(db.collection('job'))
-            );
-        })
-    }
+                return this.db.then(db => {
+                    return new Promise(resolve =>
+                        resolve(db.collection('job'))
+                    );
+                })
+            }
     // private get jobs() {
 
     // }
 
-    private get db(): Promise<any> {
-        return new Promise(resolve => {
-            if (!this._db) {
-                MongoClient.connect(ConfigProvider.get().db.url, (err: any, client: any) => {
-                    console.log("Connected successfully to server");
-                    this._db = client.db(ConfigProvider.get().db.name);
+    private get db(): Promise < any > {
+                return new Promise(resolve => {
+                    if (!this._db) {
+                        MongoClient.connect(ConfigProvider.get().db.url, (err: any, client: any) => {
+                            console.log("Connected successfully to server");
+                            this._db = client.db(ConfigProvider.get().db.name);
 
-                    resolve(this._db);
-                });
-            } else {
-                resolve(this._db);
+                            resolve(this._db);
+                        });
+                    } else {
+                        resolve(this._db);
+                    }
+
+                })
+
             }
-
-        })
-
-    }
 
 }

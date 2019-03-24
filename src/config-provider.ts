@@ -14,7 +14,9 @@ export class ConfigProvider {
                 "url": "mongodb://localhost:27017",
                 "name": "epjs"
             },
-            tempJobDir: "./tmp-jobs",
+            jobsDirectory: "./jobs",
+            tempZipDirectory: './zips',
+            workspaceDirectory: './workspace',
             limitJobsPerWorker: 1
         };
 

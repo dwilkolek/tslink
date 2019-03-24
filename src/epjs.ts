@@ -4,15 +4,14 @@ import { EpDbWorker } from "./worker";
 import { FileProvider } from "./file-provider";
 import { ConfigProvider } from "./config-provider";
 
-console.log("Additional deps: ", FileProvider.getSystemPath(ConfigProvider.depsPath));
-
 require('app-module-path').addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
 
 const cluster = require('cluster');
+const fs = require('fs');
 
 class EPJS {
 
-    worker: EpDbWorker;    
+    worker: EpDbWorker;
 
     public static bootstrap() {
         return new EPJS();
@@ -21,6 +20,7 @@ class EPJS {
     constructor() {
         this.worker = cluster.isMaster ? new MasterWorker() : new SlaveWorker();
     }
+
 }
 
 var server = EPJS.bootstrap();
