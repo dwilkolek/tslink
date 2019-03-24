@@ -1,11 +1,12 @@
 TODO:
-1. move shared types away and include them in backend/frontend
+1. make folder for zip temporary and create on init
+2. add option to stop processing (batch)
 3. make jobs recoverable
+4. cleanup & types!
 
 
 Additionals:
 1. improve user expirience
-2. add long/short running jobs and try to run it
 
 
 DONE:
