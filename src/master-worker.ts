@@ -123,10 +123,11 @@ export class MasterWorker extends EpDbWorker {
         });
 
         this.app.get('*', (req: Request, res: Response) => {
+            var url = path.resolve(path.join(__dirname, ConfigProvider.uiPath));
             if (this.allowedExt.filter(ext => req.url.indexOf(ext) > 0).length > 0) {
-                (<any>res).sendFile(path.resolve(`${ConfigProvider.uiPath}${req.url}`));
+                (<any>res).sendFile(`${url}${req.url}`);
             } else {
-                (<any>res).sendFile(path.resolve(`${ConfigProvider.uiPath}index.html`));
+                (<any>res).sendFile(`${url}\\index.html`);
             }
         });
 

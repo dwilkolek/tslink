@@ -9,9 +9,9 @@
     "build": "gulp scripts",
     "prerelease": "gulp scripts && cd ui && npm run release && cd ..",
     "release": "npm run pkg-backend",
-    "pkg-windows": "pkg dist/epjs.js --target node10-win-x64 --output release/epjs.exe",
-    "pkg-linux": "pkg dist/epjs.js --target node10-linux-x64 --output release/epjs",
-    "pkg-mac": "pkg dist/epjs.js --target node10-mac-x64 --output release/epjs.app",
+    "pkg-windows": "pkg package.json --target node10-win-x64 --output release/epjs.exe",
+    "pkg-linux": "pkg package.json --target node10-linux-x64 --output release/epjs",
+    "pkg-mac": "pkg package.json --target node10-mac-x64 --output release/epjs.app",
     "pkg-backend": "npm run pkg-windows && npm run pkg-linux",
     "start": "npm run build && node ./dist/epjs.js dev"
   },
@@ -36,7 +36,9 @@
     "unzip": "^0.1.11",
     "uuid": "^3.3.2"
   },
+  "bin": "dist/epjs.js",
   "pkg": {
-    "assets": "ui/dist/ui/**/*"
+    "assets": ["ui/dist/ui/**/*"],
+    "scripts": ["ui/dist/ui/**/*.js"]
   }
 }
