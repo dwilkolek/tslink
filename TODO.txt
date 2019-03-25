@@ -1,8 +1,7 @@
 TODO:
-1. make folder for zip temporary and create on init
-2. add option to stop processing (batch)
 3. make jobs recoverable
 4. cleanup & types!
+5. add logger
 
 
 Additionals:
@@ -12,6 +11,9 @@ Additionals:
 DONE:
 4. run jobs in spearate threads/processes
 2. store jobs and config spearated
+6. run module before/after
+2. add option to stop processing (batch)
+1. make folder for zip temporary and create on init
 
 
 ERRORS:

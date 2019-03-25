@@ -5,9 +5,10 @@ import { EpTransformStream } from "./streams/ep-transform-stream";
 import { EpWriteStream } from "./streams/ep-write-stream";
 
 import { Readable } from "stream";
-import { JobDefinitionInterface } from "./types/job-definition-interface";
+import { JobDefinition } from "./types/job-definition";
 import { JobConfig } from "./types/job-config";
 import { ConnectionNext } from "./types/connection-next";
+import { Db } from "./db";
 
 
 const process = require('process');
@@ -17,8 +18,9 @@ export class Job {
     private _counterStore: CounterStore;
     private streams: { [key: string]: Stream } = {};
     private pipelines: any[] = [];
+    private workingEndPipes = 0;
 
-    constructor(public _id: string, private jobDescription: JobDefinitionInterface, private config: JobConfig, private workspaceDirectory: string) {
+    constructor(private db:Db, public _id: string, private jobDescription: JobDefinition, private config: JobConfig, private workspaceDirectory: string) {
         console.log('Working on:', process.pid, jobDescription, config)
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
         this.sourceNames.forEach(source => {
@@ -33,13 +35,19 @@ export class Job {
     }
 
     timeout: any;
+    statisticCounter: any;
     run() {
+
+        this.statisticCounter = this.getStatisticCounterTimeout();
+
         return new Promise<Job>(resolve => {
             this.jobDescription.beforeProcessing(this.config, this.workspaceDirectory, () => {
 
                 this.jobDescription.connections.forEach((connection) => {
                     var streamed = this.getReadStream(connection.from);
                     this.streams[connection.from] = streamed;
+                    const readerOutStream = this.counterStore.collectCounterOut(connection.from)
+                    streamed = streamed.pipe(readerOutStream)
                     var connectionNext = this.pipeNext(streamed, connection.to);
                     this.pipelines.push(connectionNext);
                 })
@@ -49,31 +57,50 @@ export class Job {
         });
     }
 
+    getStatisticCounterTimeout() {
+        return setTimeout(() => {
+            this.db.updateJob({
+                _id:this._id,
+                statistics:this.counterStore.json(),
+            }, () => {
+                this.statisticCounter = this.getStatisticCounterTimeout();
+            })
+        }, 20000);
+    }
+
     getTimeoutIsDone(resolve: any) {
         return setTimeout(() => {
-            if (this.jobDescription.isDone(this.config, this.workspaceDirectory)) {
-                this.pipelines.forEach(pipeline => {
-                    console.log('should close pipes...')
-                });
-                clearTimeout(this.timeout);
-                resolve(this);
+            if (this.workingEndPipes === 0) {
+                this.jobDescription.afterProcessing(this.config, this.workspaceDirectory, () => {
+                    resolve(this);
+                })
             } else {
                 this.timeout = this.getTimeoutIsDone(resolve);
             }
 
         }, 5000);
     }
-
     private pipeNext(stream: any, connectionNext: ConnectionNext): any {
         if (connectionNext) {
             var transform = this.getTransformStream(connectionNext.name);
             var write = this.getWriteStream(connectionNext.name);
             const isTransform = transform != null;
+
+            const inStream = this.counterStore.collectCounterIn(connectionNext.name);
+
             var streamNext = stream
-                .pipe(this.counterStore.collectCounterIn(connectionNext.name));
+                .pipe(inStream);
             streamNext = isTransform ? streamNext.pipe(transform) : streamNext.pipe(write);
+            if (!isTransform) {
+                this.workingEndPipes++;
+                streamNext.on('finish', () => {
+                    console.log('pipe finished')
+                    this.workingEndPipes--;
+                })
+            }
             if (isTransform) {
-                streamNext = streamNext.pipe(this.counterStore.collectCounterOut(connectionNext.name));
+                const outStream = this.counterStore.collectCounterOut(connectionNext.name);
+                streamNext = streamNext.pipe(outStream);
             }
             if (connectionNext.to) {
                 return this.pipeNext(streamNext, connectionNext.to);

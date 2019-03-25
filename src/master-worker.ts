@@ -11,6 +11,7 @@ const cluster = require('cluster');
 const os = require('os');
 const fs = require('fs');
 const unzip = require('unzip');
+const fstream = require('fstream');
 
 const fileUpload = require('express-fileupload');
 export class MasterWorker extends EpDbWorker {
@@ -62,7 +63,7 @@ export class MasterWorker extends EpDbWorker {
     }
 
 
-    
+
 
     initExpress() {
         this.app = express();
@@ -141,12 +142,18 @@ export class MasterWorker extends EpDbWorker {
 
     storeToDisk(data: any, jobId: string) {
         const pathZip = path.join(FileProvider.getSystemPath(ConfigProvider.get().tempZipDirectory), jobId + '.zip');
+
         fs.writeFileSync(pathZip, data);
-        fs.createReadStream(pathZip).pipe(
-            unzip.Extract(
-                { path: `${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}` }
-            )
-        );
+        FileProvider.createDirectory(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
+        var readStream = fs.createReadStream(pathZip);
+        var writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
+        readStream
+            .pipe(unzip.Parse())
+            .pipe(writeStream);
+        fs.unlink(pathZip, (err) => {
+            if (err) throw err;
+            console.log(`successfully deleted ${pathZip}`);
+        });
     }
 
     getRandomSlave() {

@@ -3,9 +3,9 @@ import { JobStatusEnum } from "../job-status-enum";
 
 export interface JobDBO {
     _id?: string;
-    jobDefinitionId: string;
-    config: JobConfig;
-    status: JobStatusEnum;
+    jobDefinitionId?: string;
+    config?: JobConfig;
+    status?: JobStatusEnum;
     startDateTime?: Date;
     endDateTime?: Date;
     statistics?: any;

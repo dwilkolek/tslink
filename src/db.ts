@@ -100,9 +100,6 @@ export class Db {
                     );
                 })
             }
-    // private get jobs() {
-
-    // }
 
     private get db(): Promise < any > {
                 return new Promise(resolve => {
