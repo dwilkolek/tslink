@@ -60,6 +60,7 @@ export class MasterWorker extends EpDbWorker {
     createDirectories() {
         FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory));
         FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().tempZipDirectory));
+        FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().workspaceDirectory));
     }
 
 
