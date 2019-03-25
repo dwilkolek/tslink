@@ -1,21 +1,26 @@
-const express = require('express');
-
+import * as cluster from 'cluster';
+import * as express from 'express';
+import * as expressFileupload from 'express-fileupload';
+import * as fs from 'fs';
+import * as fstream from 'fstream';
+import * as os from 'os';
 import * as path from 'path';
-import { EpDbWorker } from './worker';
+import { Transform } from 'stream';
+import * as unzip from 'unzip';
+import { isArray } from 'util';
 import { ConfigProvider } from './config-provider';
-import { JobStatusEnum } from './job-status-enum';
 import { FileProvider } from './file-provider';
-import { JobDBO } from './types/job-dbo';
+import { JobStatusEnum } from './job-status-enum';
+import { IJobConfig } from './types/job-config';
+import { IJobDBO } from './types/job-dbo';
+import { IJobDefinition } from './types/job-definition';
+import { IJobDefinitionDBO } from './types/job-definition-dbo';
+import { EpDbWorker } from './worker';
 
-const cluster = require('cluster');
-const os = require('os');
-const fs = require('fs');
-const unzip = require('unzip');
-const fstream = require('fstream');
-
-const fileUpload = require('express-fileupload');
 export class MasterWorker extends EpDbWorker {
-    public app: any;
+    public app: express.Application;
+
+    public runningJobs = 0;
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
@@ -42,13 +47,10 @@ export class MasterWorker extends EpDbWorker {
         }
 
         this.forkCores();
-        this.initExpress();
+        this.app = this.initExpress();
         this.createDirectories();
     }
-
-
-    runningJobs = 0;
-    forkCores() {
+    public forkCores() {
         const cpus = ConfigProvider.get().cpus || os.cpus().length;
         console.log(`Forking for ${cpus} CPUs`);
         for (let i = 0; i < cpus; i++) {
@@ -56,98 +58,105 @@ export class MasterWorker extends EpDbWorker {
         }
     }
 
-
-    createDirectories() {
+    public createDirectories() {
         FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory));
         FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().tempZipDirectory));
         FileProvider.createDirectory(FileProvider.getSystemPath(ConfigProvider.get().workspaceDirectory));
     }
 
-
-
-
-    initExpress() {
-        this.app = express();
-
-        this.app.use(fileUpload());
+    public initExpress() {
+        const app = express.default();
+        app.use(expressFileupload.default());
 
         if (ConfigProvider.isDev) {
-            this.app.use(function (req: any, res: any, next: any) {
+            this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
                 res.header('Access-Control-Allow-Origin', '*');
                 res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
                 next();
             });
         }
 
-        this.app.post('/api/job', (req: any, res: any) => {
+        app.post('/api/job', (req: express.Request, res: express.Response) => {
             const jobDefinition = {
                 name: req.params.name
             };
-            this.db.storeJobDefinition(jobDefinition, jobDefinition => {
-                res.set('Content-Type', 'application/json');
-                this.storeToDisk(req.files.job.data, jobDefinition._id || '');
-                res.json({ id: jobDefinition._id });
-            });
+            if (req.files != null && req.files.job != null) {
+                const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.job) ? req.files.job[0] : req.files.job;
+                this.db.storeJobDefinition(jobDefinition, (jobDefinitionDBO: IJobDefinitionDBO) => {
+                    res.set('Content-Type', 'application/json');
+                    this.storeToDisk(uploadedFile.data, jobDefinitionDBO._id || '');
+
+                    res.json({ id: jobDefinitionDBO._id });
+                });
+            } else {
+                res.json({ id: null });
+            }
 
         });
 
-        this.app.post('/api/config', (req: any, res: any) => {
-            this.db.storeJobConfig(JSON.parse(req.files.config.data.toString()), jobConfig => {
-                res.set('Content-Type', 'application/json');
-                res.json({ id: jobConfig._id });
-            });
+        app.post('/api/config', (req: express.Request, res: express.Response) => {
+            if (req.files != null && req.files.config) {
+                const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.config) ? req.files.config[0] : req.files.config;
+                this.db.storeJobConfig(JSON.parse(uploadedFile.data.toString()) as IJobConfig, (jobConfig) => {
+                    res.set('Content-Type', 'application/json');
+                    res.json({ id: jobConfig._id });
+                });
+            } else {
+                res.json({ id: null });
+            }
         });
 
-        this.app.post('/api/job/start', (req: any, res: any) => {
+        app.post('/api/job/start', (req: express.Request, res: express.Response) => {
             const jobId = req.params.jobId;
             const configId = req.params.configId;
-            this.db.findJobDefinition(jobId).then(jobDefinition => {
-                this.db.findJobConfig(configId).then(jobConfig => {
-                    const jobDBO: JobDBO = {
-                        jobDefinitionId: jobId,
+            this.db.findJobDefinition(jobId).then((jobDefinition) => {
+                this.db.findJobConfig(configId).then((jobConfig) => {
+                    const jobDBO: IJobDBO = {
                         config: jobConfig,
-                        status: JobStatusEnum.STORED
+                        jobDefinitionId: jobId,
+                        status: JobStatusEnum.STORED,
                     };
                     this.db.storeJob(jobDBO, (job) => {
                         res.set('Content-Type', 'application/json');
-                        res.json({ jobDBO: jobDBO });
+                        res.json({ jobDBO });
                     });
                 });
             });
 
-
         });
 
-        this.app.get('*', (req: Request, res: Response) => {
+        app.get('*', (req: express.Request, res: express.Response) => {
             const url = path.resolve(path.join(__dirname, ConfigProvider.uiPath));
-            if (this.allowedExt.filter(ext => req.url.indexOf(ext) > 0).length > 0) {
-                (<any>res).sendFile(`${url}${req.url}`);
+            if (this.allowedExt.filter((ext) => req.url.indexOf(ext) > 0).length > 0) {
+                res.sendFile(`${url}${req.url}`);
             } else {
-                (<any>res).sendFile(`${url}\\index.html`);
+                res.sendFile(`${url}\\index.html`);
             }
         });
 
-        this.app.listen(this.port, () => console.log(`http is started ${this.port}`));
+        app.listen(this.port, () => console.log(`http is started ${this.port}`));
 
-        this.app.on('error', (error: any) => {
+        app.on('error', (error) => {
             console.error('ERROR', error);
         });
 
-        process.on('uncaughtException', (error: any) => {
+        process.on('uncaughtException', (error) => {
             console.log(error);
         });
 
+        return app;
     }
 
-    storeToDisk(data: any, jobId: string) {
+    private storeToDisk(data: Buffer, jobId: string) {
         const pathZip = path.join(FileProvider.getSystemPath(ConfigProvider.get().tempZipDirectory), jobId + '.zip');
-
         fs.writeFileSync(pathZip, data);
         FileProvider.createDirectory(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
         const readStream = fs.createReadStream(pathZip);
+        /* tslint:disable:no-unsafe-any */
         const writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
+        /* tslint:enable:no-unsafe-any */
         readStream
-            .pipe(unzip.Parse())
+            .pipe(unzip.Parse() as Transform)
             .pipe(writeStream);
         fs.unlink(pathZip, (err) => {
             if (err) {
@@ -156,12 +165,4 @@ export class MasterWorker extends EpDbWorker {
         });
     }
 
-    getRandomSlave() {
-        const workerNames = Object.keys(cluster.workers);
-        const workableWorkers = workerNames.map(name => {
-            return cluster.workers[name];
-        }).filter(worker => worker.process.pid !== process.pid);
-        console.log('workers left:', workableWorkers.length);
-        return workableWorkers[Math.round(Math.random() * 1000) % workableWorkers.length];
-    }
 }

@@ -1,5 +1,5 @@
-import { Db } from './db';
+import { DBQueries } from './db-queries';
 
 export class EpDbWorker {
-    public db: Db = new Db();
+    public db: DBQueries = new DBQueries();
 }

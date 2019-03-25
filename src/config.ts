@@ -1,8 +1,8 @@
-export interface Config {
+export interface IConfig {
     cpus: number;
     db: {
         url: string,
-        name: string
+        name: string,
     };
     port?: number;
     jobsDirectory: './jobs';

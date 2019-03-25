@@ -1,22 +1,22 @@
 export class TimeCounter {
-    totalTime: number = 0;
-    currentUnit = 0;
-    hits = 0;
+    public totalTime: number = 0;
+    public currentUnit = 0;
+    public hits = 0;
 
-    units = ['ms', 's', 'min', 'h', 'd'];
-    divs = [1000, 60, 60, 24];
+    public units = ['ms', 's', 'min', 'h', 'd'];
+    public divs = [1000, 60, 60, 24];
 
-    prettyPrint() {
+    public prettyPrint() {
         return `TimeCounter took ${Math.round(this.totalTime * 100) / 100}${this.units[this.currentUnit]}`;
     }
 
-    json() {
+    public json() {
         return {
             totalTime: Math.round(this.totalTime * 100) / 100,
-            unit: this.units[this.currentUnit]
+            unit: this.units[this.currentUnit],
         };
     }
-    put(time: number) {
+    public put(time: number) {
         this.totalTime += this.timeToAdd(time);
         if (this.totalTime > this.divs[this.currentUnit] && this.divs[this.currentUnit + 1]) {
             this.totalTime = this.totalTime / this.divs[this.currentUnit];
@@ -24,7 +24,7 @@ export class TimeCounter {
         }
     }
 
-    timeToAdd(time: number) {
+    public timeToAdd(time: number) {
         if (time === 0) {
             return time;
         }

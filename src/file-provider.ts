@@ -1,7 +1,7 @@
 import { ConfigProvider } from './config-provider';
 
-const path = require('path');
-const fs = require('fs');
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class FileProvider {
     public static getSystemPath(file: string) {
@@ -17,14 +17,14 @@ export class FileProvider {
         try {
             fs.mkdirSync(dirPath, { recursive: true, mode: 0o744 });
         } catch (e) {
-            if (e.code !== 'EEXIST') {
+            if ((e as NodeJS.ErrnoException).code !== 'EEXIST') {
                 console.warn('Failed to create directory at:', path.resolve(dirPath), e);
             }
         }
     }
 
-    public static rmdirAsync(path, callback) {
-        fs.readdir(path, function (err, files) {
+    public static rmdirAsync(pathProvided: string, callback: (err: NodeJS.ErrnoException, data?: string[]) => void) {
+        fs.readdir(pathProvided, (err, files) => {
             if (err) {
                 // Pass the error on to callback
                 callback(err, []);
@@ -32,14 +32,14 @@ export class FileProvider {
             }
 
             let count = 0;
-            const wait = files.length,
-                folderDone = function (err?) {
-                    count++;
-                    // If we cleaned out all the files, continue
-                    if (count >= wait || err) {
-                        fs.rmdir(path, callback);
-                    }
-                };
+            const wait = files.length;
+            const folderDone = (errCb?) => {
+                count++;
+                // If we cleaned out all the files, continue
+                if (count >= wait || err) {
+                    fs.rmdir(pathProvided, callback);
+                }
+            };
             // Empty directory to bail early
             if (!wait) {
                 folderDone();
@@ -47,12 +47,12 @@ export class FileProvider {
             }
 
             // Remove one or more trailing slash to keep from doubling up
-            path = path.replace(/\/+$/, '');
-            files.forEach(function (file) {
+            pathProvided = pathProvided.replace(/\/+$/, '');
+            files.forEach((file) => {
                 const curPath = path + '/' + file;
-                fs.lstat(curPath, function (err, stats) {
-                    if (err) {
-                        callback(err, []);
+                fs.lstat(curPath, (errCb, stats) => {
+                    if (errCb) {
+                        callback(errCb, []);
                         return;
                     }
                     if (stats.isDirectory()) {

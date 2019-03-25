@@ -2,10 +2,10 @@ import { ProcessingCounter } from './process-counter';
 import { TimeCounter } from './time-counter';
 
 export class NodeCounter {
-    name: string;
-    in: ProcessingCounter;
-    out: ProcessingCounter;
-    time: TimeCounter;
+    public name: string;
+    public in: ProcessingCounter;
+    public out: ProcessingCounter;
+    public time: TimeCounter;
 
     constructor(name: string) {
         this.name = name;
@@ -14,29 +14,29 @@ export class NodeCounter {
         this.time = new TimeCounter();
     }
 
-    putIn(buff: Buffer) {
+    public putIn(buff: Buffer) {
         this.in.put(buff);
     }
 
-    putOut(buff: Buffer) {
+    public putOut(buff: Buffer) {
         this.out.put(buff);
     }
 
-    putTime(time: number) {
+    public putTime(time: number) {
         this.time.put(time);
     }
 
-    prettyPrint() {
+    public prettyPrint() {
         return `Node: ${this.name}:
         \n\tin: ${this.in.prettyPrint()}
         \n\tout: ${this.out.prettyPrint()}
         \n\ttime: ${this.time.prettyPrint()}\n\n`;
     }
 
-    json() {
+    public json() {
         return {
-            name: this.name,
             in: this.in.json(),
+            name: this.name,
             out: this.out.json(),
             time: this.time.json(),
         };

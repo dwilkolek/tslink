@@ -1,6 +1,6 @@
-import { Transform, Readable, Writable } from 'stream';
-import { JobConfig } from './job-config';
+import { Readable, Transform, Writable } from 'stream';
+import { IJobConfig } from './job-config';
 
-export interface SinkDescription {
-    get: (config: JobConfig, workspace: string) => Writable;
+export interface ISinkDescription {
+    get: (config: IJobConfig, workspace: string) => Writable;
 }

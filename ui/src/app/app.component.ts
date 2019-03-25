@@ -10,20 +10,20 @@ export class AppComponent {
   title = 'frontend';
   stats = [];
   date = new Date();
-  constructor(private backend: BackendService) {
-    console.log('_');
-    // this.backend.getStats().subscribe(data => {
-    //   this.stats = <any[]>data;
-    //   this.date = new Date();
-    // });
-    // setInterval(() => {
-    //   this.backend.getStats().subscribe(data => {
-    //     this.stats = <any[]>data;
-    //     this.date = new Date();
-    //   });
-    // }, 10000)
+  // constructor(private backend: BackendService) {
+  //   console.log('_');
+  //   // this.backend.getStats().subscribe(data => {
+  //   //   this.stats = <any[]>data;
+  //   //   this.date = new Date();
+  //   // });
+  //   // setInterval(() => {
+  //   //   this.backend.getStats().subscribe(data => {
+  //   //     this.stats = <any[]>data;
+  //   //     this.date = new Date();
+  //   //   });
+  //   // }, 10000)
 
-  }
+  // }
 
 
 }

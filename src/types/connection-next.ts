@@ -1,4 +1,4 @@
-export interface ConnectionNext {
+export interface IConnectionNext {
     name: string;
-    to?: any;
+    to?: IConnectionNext;
 }
