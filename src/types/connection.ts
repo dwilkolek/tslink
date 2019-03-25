@@ -1,6 +1,6 @@
-import { ConnectionNext } from './connection-next';
+import { IConnectionNext } from './connection-next';
 
-export interface Connection {
+export interface IConnection {
     from: string;
-    to: ConnectionNext;
+    to: IConnectionNext;
 }
