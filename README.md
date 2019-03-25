@@ -1,5 +1,6 @@
 # epjs
-[![CodeFactor](https://www.codefactor.io/repository/github/dwilkolek/epjs/badge/master)](https://www.codefactor.io/repository/github/dwilkolek/epjs/overview/master)[![CircleCI](https://circleci.com/gh/dwilkolek/epjs/tree/master.svg?style=svg)](https://circleci.com/gh/dwilkolek/epjs/tree/master)
+[![CodeFactor](https://www.codefactor.io/repository/github/dwilkolek/epjs/badge/master)](https://www.codefactor.io/repository/github/dwilkolek/epjs/overview/master)
+[![CircleCI](https://circleci.com/gh/dwilkolek/epjs/tree/master.svg?style=svg)](https://circleci.com/gh/dwilkolek/epjs/tree/master)
 
 ## installing dependecies
 `npm install`
