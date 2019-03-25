@@ -1,21 +1,20 @@
+import * as appModulePath from 'app-module-path';
+import * as cluster from 'cluster';
+import { ConfigProvider } from './config-provider';
+import { FileProvider } from './file-provider';
 import { MasterWorker } from './master-worker';
 import { SlaveWorker } from './slave-worker';
 import { EpDbWorker } from './worker';
-import { FileProvider } from './file-provider';
-import { ConfigProvider } from './config-provider';
 
-require('app-module-path').addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
-
-const cluster = require('cluster');
-const fs = require('fs');
+appModulePath.addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
 
 class EPJS {
-
-    worker: EpDbWorker;
 
     public static bootstrap() {
         return new EPJS();
     }
+
+    private worker: EpDbWorker;
 
     constructor() {
         this.worker = cluster.isMaster ? new MasterWorker() : new SlaveWorker();
@@ -23,5 +22,4 @@ class EPJS {
 
 }
 
-const server = EPJS.bootstrap();
-exports.default = server;
+export const server = EPJS.bootstrap();

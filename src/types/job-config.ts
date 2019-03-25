@@ -1,4 +1,4 @@
-export interface JobConfig {
+export interface IJobConfig {
     _id?: string;
     name: string;
     jobParams?: any;

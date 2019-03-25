@@ -3,9 +3,13 @@ import { NodeCounter } from './counters/node-counter';
 
 export class CounterStore {
 
-    constructor(private uuid: string, private jobName: string) { }
+    get counterNames() {
+        return Object.keys(this.counters);
+    }
 
-    counters: { [key: string]: NodeCounter } = {};
+    public counters: { [key: string]: NodeCounter } = {};
+
+    constructor(private jobId: string, private jobName: string) { }
 
     public init(name: string) {
         this.counters[name] = new NodeCounter(name);
@@ -49,14 +53,10 @@ export class CounterStore {
         return this.jobName + ':' + name + '-out';
     }
 
-    get counterNames() {
-        return Object.keys(this.counters);
-    }
-
     public prettyPrint() {
         const header = `------------------------------------------------------------\nJob: ${this.jobName}\n`;
         const footer = `\n------------------------------------------------------------\n`;
-        const body = this.counterNames.map(name => {
+        const body = this.counterNames.map((name) => {
             return '\t' + this.counters[name].prettyPrint();
         }).join('\n');
         return header + body + footer;
@@ -64,13 +64,11 @@ export class CounterStore {
 
     public json() {
         return {
-            uuid: this.uuid,
+            jobId: this.jobId,
             name: this.jobName,
-            processes: this.counterNames.map(counterName => {
+            processes: this.counterNames.map((counterName) => {
                 return this.counters[counterName].json();
-            })
+            }),
         };
     }
 }
-
-

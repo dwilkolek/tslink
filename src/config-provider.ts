@@ -1,33 +1,8 @@
-import { Config } from './config';
-const fs = require('fs');
+import * as fs from 'fs';
+import { IConfig } from './config';
 
 export class ConfigProvider {
-
-    private static _instance: ConfigProvider;
-
-    config: Config;
-
-    private constructor() {
-        this.config = {
-            cpus: 4,
-            db: {
-                'url': 'mongodb://localhost:27017',
-                'name': 'epjs'
-            },
-            jobsDirectory: './jobs',
-            tempZipDirectory: './zips',
-            workspaceDirectory: './workspace',
-            limitJobsPerWorker: 1
-        };
-
-        try {
-            const userConfig = JSON.parse(fs.readFileSync('./epjs-config.json').toString());
-            Object.assign(this.config, userConfig);
-        } catch (e) {
-            console.warn('File epjs-config.json is missing. Using default config');
-        }
-    }
-    public static isDev = process.argv.filter(arg => arg === 'dev').length === 1;
+    public static isDev = process.argv.filter((arg) => arg === 'dev').length === 1;
 
     public static uiPath = ConfigProvider.isDev ? './ui/dist/ui/' : '../ui/dist/ui';
     public static depsPath = './node_modules';
@@ -39,7 +14,32 @@ export class ConfigProvider {
         return this._instance;
     }
 
-    public static get(): Config {
+    public static get(): IConfig {
         return this.getInstance().config;
+    }
+
+    private static _instance: ConfigProvider;
+
+    public config: IConfig;
+
+    private constructor() {
+        this.config = {
+            cpus: 4,
+            db: {
+                name: 'epjs',
+                url: 'mongodb://localhost:27017',
+            },
+            jobsDirectory: './jobs',
+            limitJobsPerWorker: 1,
+            tempZipDirectory: './zips',
+            workspaceDirectory: './workspace',
+        };
+
+        try {
+            const userConfig = JSON.parse(fs.readFileSync('./epjs-config.json').toString());
+            Object.assign(this.config, userConfig);
+        } catch (e) {
+            console.warn('File epjs-config.json is missing. Using default config');
+        }
     }
 }

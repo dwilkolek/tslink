@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
-import { JobConfig } from './job-config';
+import { IJobConfig } from './job-config';
 
-export interface SourceDescription {
-    get: (config: JobConfig, workspace: string) => Readable;
+export interface ISourceDescription {
+    get: (config: IJobConfig, workspace: string) => Readable;
 }
