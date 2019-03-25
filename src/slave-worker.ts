@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigProvider } from './config-provider';
 import { FileProvider } from './file-provider';
@@ -47,8 +46,7 @@ export class SlaveWorker extends EpDbWorker {
             `${FileProvider.getSystemPath(ConfigProvider.get().workspaceDirectory)}/${jobId}/`,
         );
         (async (self) => {
-            console.log(jobId, 'jobDefinitionDirectory: ', jobDefinitionDirectory);
-            console.log(jobId, 'workspaceDirectory: ', workspaceDirectory);
+            console.log('jobId', jobId, '; jobDefinitionDirectory: ', jobDefinitionDirectory, '; workspaceDirectory: ', workspaceDirectory);
             FileProvider.createDirectory(workspaceDirectory);
             const jobfilename: string = path.join(jobDefinitionDirectory, config.entryFile);
             /* tslint:disable:no-unsafe-any */

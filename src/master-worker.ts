@@ -69,7 +69,7 @@ export class MasterWorker extends EpDbWorker {
         app.use(expressFileupload.default());
 
         if (ConfigProvider.isDev) {
-            this.app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+            app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
                 res.header('Access-Control-Allow-Origin', '*');
                 res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
                 next();
@@ -83,11 +83,11 @@ export class MasterWorker extends EpDbWorker {
             };
             if (req.files != null && req.files.job != null) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.job) ? req.files.job[0] : req.files.job;
-                this.db.storeJobDefinition(jobDefinition, (jobDefinitionDBO: IJobDefinitionDBO) => {
+                this.db.storeJobDefinition(jobDefinition, (storeResult) => {
                     res.set('Content-Type', 'application/json');
-                    this.storeToDisk(uploadedFile.data, jobDefinitionDBO._id || '');
+                    this.storeToDisk(uploadedFile.data, storeResult.insertedId.toHexString() || '');
 
-                    res.json({ id: jobDefinitionDBO._id });
+                    res.json({ id: storeResult.insertedId });
                 });
             } else {
                 res.json({ id: null });
@@ -98,9 +98,9 @@ export class MasterWorker extends EpDbWorker {
         app.post('/api/config', (req: express.Request, res: express.Response) => {
             if (req.files != null && req.files.config) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.config) ? req.files.config[0] : req.files.config;
-                this.db.storeJobConfig(JSON.parse(uploadedFile.data.toString()) as IJobConfig, (jobConfig) => {
+                this.db.storeJobConfig(JSON.parse(uploadedFile.data.toString()) as IJobConfig, (storeResult) => {
                     res.set('Content-Type', 'application/json');
-                    res.json({ id: jobConfig._id });
+                    res.json({ id: storeResult.insertedId });
                 });
             } else {
                 res.json({ id: null });
@@ -109,9 +109,9 @@ export class MasterWorker extends EpDbWorker {
 
         app.post('/api/job/start', (req: express.Request, res: express.Response) => {
             /* tslint:disable:no-unsafe-any */
-            if (typeof req.params.jobId && req.params.configId) {
-                const jobId = req.params.jobId;
-                const configId = req.params.configId;
+            if (req.query.jobId != null && req.query.configId != null) {
+                const jobId = req.query.jobId;
+                const configId = req.query.configId;
                 this.db.findJobDefinition(jobId).then((jobDefinition) => {
                     this.db.findJobConfig(configId).then((jobConfig) => {
                         const jobDBO: IJobDBO = {
@@ -120,9 +120,9 @@ export class MasterWorker extends EpDbWorker {
                             status: JobStatusEnum.STORED,
                         };
                         /* tslint:enable:no-unsafe-any */
-                        this.db.storeJob(jobDBO, (job) => {
+                        this.db.storeJob(jobDBO, (result) => {
                             res.set('Content-Type', 'application/json');
-                            res.json({ jobDBO });
+                            res.json({id: result.insertedId});
                         });
                     });
                 });

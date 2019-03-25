@@ -50,6 +50,6 @@ export class BackendService {
     const options = {
       params: params,
     };
-    return this.http.post(`${environment.apiUrl}job/start`, {}, options);
+    return this.http.post(`${environment.apiUrl}job/start`, {'jobId': jobId, 'configId': configId}, options);
   }
 }

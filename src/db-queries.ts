@@ -1,4 +1,4 @@
-import { Collection, Db, FindOneAndUpdateOption, MongoClient, ObjectID } from 'mongodb';
+import { Collection, Db, FindOneAndUpdateOption, InsertOneWriteOpResult, MongoClient, ObjectID, UpdateWriteOpResult } from 'mongodb';
 import { ConfigProvider } from './config-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
@@ -7,42 +7,42 @@ import { IJobDefinitionDBO } from './types/job-definition-dbo';
 
 export class DBQueries {
 
-    public storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO, callback: (jobDefinitionDBO: IJobDefinitionDBO) => void) {
+    public storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO, callback: (insertResult: InsertOneWriteOpResult) => void) {
         this.jobsDefinitions.then((collection) => {
-            collection.insertOne(jobDefinitionDBO, (result) => {
-                callback(jobDefinitionDBO);
+            collection.insertOne(jobDefinitionDBO, (err, result) => {
+                callback(result);
             });
         });
     }
 
-    public storeJobConfig(jobConfig: IJobConfig, callback: (JobConfig: IJobConfig) => void) {
+    public storeJobConfig(jobConfig: IJobConfig, callback: (insertResult: InsertOneWriteOpResult) => void) {
         this.jobsConfigs.then((collection) => {
-            collection.insertOne(jobConfig, (result) => {
-                callback(jobConfig);
+            collection.insertOne(jobConfig, (err, result) => {
+                callback(result);
             });
         });
     }
 
-    public updateJob(jobDBO: IJobDBO, callback?: (jobDBO: IJobDBO) => void) {
+    public updateJob(jobDBO: IJobDBO, callback?: (updateResult: UpdateWriteOpResult) => void) {
         this.jobs.then((collection) => {
-            collection.updateOne({ _id: jobDBO._id }, { $set: jobDBO }, (result) => {
+            collection.updateOne({ _id: new ObjectID(jobDBO._id) }, { $set: jobDBO }, (err, result) => {
                 if (callback) {
-                    callback(jobDBO);
+                    callback(result);
                 }
             });
         });
     }
 
-    public storeJob(job: IJobDBO, callback: (job: IJobDBO) => void) {
+    public storeJob(job: IJobDBO, callback: (inserResult: InsertOneWriteOpResult) => void) {
         this.jobs.then((collection) => {
-            collection.insertOne(job, (result) => {
-                callback(job);
+            collection.insertOne(job, (err, result) => {
+                callback(result);
             });
         });
     }
 
     public findJobByStatusAndRun(status: JobStatusEnum): Promise<IJobDBO> {
-        const options: FindOneAndUpdateOption = {};
+        const options: FindOneAndUpdateOption = { returnOriginal: true };
         return this.jobs.then((collection) => {
             return new Promise<IJobDBO>((resolve) => {
                 collection.findOneAndUpdate({ status },
@@ -56,20 +56,20 @@ export class DBQueries {
         });
     }
 
-    public findJobDefinition(_id: string): Promise<IJobDefinitionDBO> {
+    public findJobDefinition(id: string): Promise<IJobDefinitionDBO> {
         return this.jobsDefinitions.then((collection) => {
             return new Promise<IJobDefinitionDBO>((resolve) => {
-                collection.findOne({ _id: new ObjectID(_id) }, {}).then((data) => {
+                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
                     resolve(data as IJobDefinitionDBO);
                 });
             });
         });
     }
 
-    public findJobConfig(_id: string): Promise<IJobConfig> {
+    public findJobConfig(id: string): Promise<IJobConfig> {
         return this.jobsConfigs.then((collection: Collection<IJobConfig>) => {
             return new Promise<IJobConfig>((resolve) => {
-                collection.findOne({ _id: new ObjectID(_id) }, {}).then((data) => {
+                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
                     resolve(data as IJobConfig);
                 });
             });
@@ -102,7 +102,7 @@ export class DBQueries {
 
     private get db(): Promise<Db> {
         return new Promise<Db>((resolve) => {
-            MongoClient.connect(ConfigProvider.get().db.url).then((client: MongoClient) => {
+            MongoClient.connect(ConfigProvider.get().db.url, { useNewUrlParser: true }).then((client: MongoClient) => {
                 resolve(client.db(ConfigProvider.get().db.name));
             });
         });

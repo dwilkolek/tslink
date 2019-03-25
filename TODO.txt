@@ -3,7 +3,6 @@ make jobs recoverable
 add logger
 add tests
 improve user expirience
-zip directory should be temporary directory
 
 DONE:
 run jobs in spearate threads/processes
