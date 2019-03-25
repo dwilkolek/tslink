@@ -78,11 +78,11 @@ export class MasterWorker extends EpDbWorker {
 
         app.post('/api/job', (req: express.Request, res: express.Response) => {
             const jobDefinition = {
-                name: req.param('name'),
+                // tslint:disable-next-line:no-unsafe-any
+                name: req.params.name,
             };
             if (req.files != null && req.files.job != null) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.job) ? req.files.job[0] : req.files.job;
-
                 this.db.storeJobDefinition(jobDefinition, (jobDefinitionDBO: IJobDefinitionDBO) => {
                     res.set('Content-Type', 'application/json');
                     this.storeToDisk(uploadedFile.data, jobDefinitionDBO._id || '');
@@ -108,22 +108,27 @@ export class MasterWorker extends EpDbWorker {
         });
 
         app.post('/api/job/start', (req: express.Request, res: express.Response) => {
-            const jobId = req.param('jobId');
-            const configId = req.param('configId');
-            this.db.findJobDefinition(jobId).then((jobDefinition) => {
-                this.db.findJobConfig(configId).then((jobConfig) => {
-                    const jobDBO: IJobDBO = {
-                        config: jobConfig,
-                        jobDefinitionId: jobId,
-                        status: JobStatusEnum.STORED,
-                    };
-                    this.db.storeJob(jobDBO, (job) => {
-                        res.set('Content-Type', 'application/json');
-                        res.json({ jobDBO });
+            /* tslint:disable:no-unsafe-any */
+            if (typeof req.params.jobId && req.params.configId) {
+                const jobId = req.params.jobId;
+                const configId = req.params.configId;
+                this.db.findJobDefinition(jobId).then((jobDefinition) => {
+                    this.db.findJobConfig(configId).then((jobConfig) => {
+                        const jobDBO: IJobDBO = {
+                            config: jobConfig,
+                            jobDefinitionId: jobId,
+                            status: JobStatusEnum.STORED,
+                        };
+                        /* tslint:enable:no-unsafe-any */
+                        this.db.storeJob(jobDBO, (job) => {
+                            res.set('Content-Type', 'application/json');
+                            res.json({ jobDBO });
+                        });
                     });
                 });
-            });
-
+            } else {
+                res.json({ });
+            }
         });
 
         app.get('*', (req: express.Request, res: express.Response) => {
@@ -153,9 +158,8 @@ export class MasterWorker extends EpDbWorker {
         fs.writeFileSync(pathZip, data);
         FileProvider.createDirectory(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
         const readStream = fs.createReadStream(pathZip);
-        /* tslint:disable:no-unsafe-any */
+        // tslint:disable-next-line:no-unsafe-any
         const writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
-        /* tslint:enable:no-unsafe-any */
         readStream
             .pipe(unzip.Parse() as Transform)
             .pipe(writeStream);
