@@ -71,6 +71,7 @@ export class Job {
     getTimeoutIsDone(resolve: any) {
         return setTimeout(() => {
             if (this.workingEndPipes === 0) {
+                clearTimeout(this.statisticCounter);
                 this.jobDescription.afterProcessing(this.config, this.workspaceDirectory, () => {
                     resolve(this);
                 })
