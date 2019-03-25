@@ -14,7 +14,7 @@ DONE:
 6. run module before/after
 2. add option to stop processing (batch)
 1. make folder for zip temporary and create on init
-
+linting
 
 ERRORS:
 req.param
