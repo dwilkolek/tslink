@@ -7,6 +7,8 @@ import { IJobDefinitionDBO } from './types/job-definition-dbo';
 
 export class DBQueries {
 
+    private mongoDb?: Db;
+
     public storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO, callback: (insertResult: InsertOneWriteOpResult) => void) {
         this.jobsDefinitions.then((collection) => {
             collection.insertOne(jobDefinitionDBO, (err, result) => {
@@ -102,11 +104,14 @@ export class DBQueries {
 
     private get db(): Promise<Db> {
         return new Promise<Db>((resolve) => {
-            MongoClient.connect(ConfigProvider.get().db.url, { useNewUrlParser: true }).then((client: MongoClient) => {
-                resolve(client.db(ConfigProvider.get().db.name));
-            });
+            if (this.mongoDb) {
+                resolve(this.mongoDb);
+            } else {
+                MongoClient.connect(ConfigProvider.get().db.url, { useNewUrlParser: true }).then((client: MongoClient) => {
+                    this.mongoDb = client.db(ConfigProvider.get().db.name);
+                    resolve(this.mongoDb);
+                });
+            }
         });
-
     }
-
 }
