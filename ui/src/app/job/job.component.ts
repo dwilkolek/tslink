@@ -1,19 +1,15 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-job',
   templateUrl: './job.component.html',
   styleUrls: ['./job.component.less']
 })
-export class JobComponent implements OnInit {
+export class JobComponent {
 
   hidden = true;
 
   @Input() job: any;
-  constructor() { }
-
-  ngOnInit() {
-  }
 
   toggle() {
     this.hidden = !this.hidden;

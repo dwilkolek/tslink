@@ -5,8 +5,8 @@ export interface Config {
         name: string
     };
     port?: number;
-    jobsDirectory: "./jobs",
-    tempZipDirectory: './zips',
-    workspaceDirectory: './workspace',
-    limitJobsPerWorker: 1
+    jobsDirectory: './jobs';
+    tempZipDirectory: './zips';
+    workspaceDirectory: './workspace';
+    limitJobsPerWorker: 1;
 }

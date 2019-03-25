@@ -1,5 +1,5 @@
-import { JobConfig } from "./job-config";
-import { JobStatusEnum } from "../job-status-enum";
+import { JobConfig } from './job-config';
+import { JobStatusEnum } from '../job-status-enum';
 
 export interface JobDBO {
     _id?: string;
@@ -9,5 +9,5 @@ export interface JobDBO {
     startDateTime?: Date;
     endDateTime?: Date;
     statistics?: any;
-    error?: any
+    error?: any;
 }

@@ -5,12 +5,8 @@ import { Component, OnInit, Input } from '@angular/core';
   templateUrl: './stats.component.html',
   styleUrls: ['./stats.component.less']
 })
-export class StatsComponent implements OnInit {
+export class StatsComponent {
 
   @Input() process;
-  constructor() { }
-
-  ngOnInit() {
-  }
 
 }

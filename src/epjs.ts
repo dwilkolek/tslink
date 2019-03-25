@@ -1,8 +1,8 @@
-import { MasterWorker } from "./master-worker";
-import { SlaveWorker } from "./slave-worker";
-import { EpDbWorker } from "./worker";
-import { FileProvider } from "./file-provider";
-import { ConfigProvider } from "./config-provider";
+import { MasterWorker } from './master-worker';
+import { SlaveWorker } from './slave-worker';
+import { EpDbWorker } from './worker';
+import { FileProvider } from './file-provider';
+import { ConfigProvider } from './config-provider';
 
 require('app-module-path').addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
 
@@ -23,5 +23,5 @@ class EPJS {
 
 }
 
-var server = EPJS.bootstrap();
+const server = EPJS.bootstrap();
 exports.default = server;

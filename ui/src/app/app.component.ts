@@ -8,9 +8,10 @@ import { BackendService } from './backend.service';
 })
 export class AppComponent {
   title = 'frontend';
-  stats= [];
-  date= new Date();
+  stats = [];
+  date = new Date();
   constructor(private backend: BackendService) {
+    console.log('_');
     // this.backend.getStats().subscribe(data => {
     //   this.stats = <any[]>data;
     //   this.date = new Date();

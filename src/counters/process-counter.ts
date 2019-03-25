@@ -2,7 +2,7 @@ export class ProcessingCounter {
     count: number = 0;
     size: number = 0;
     sizeMultiplication = 0;
-    units = ['b', 'kb', 'mb', 'gb', 'tb', 'pb']
+    units = ['b', 'kb', 'mb', 'gb', 'tb', 'pb'];
     sizeMultiplicationToUnit(size: number) {
         return this.units[size];
     }
@@ -22,14 +22,16 @@ export class ProcessingCounter {
     }
 
     prettyPrint() {
-        return `ProcessingCounter processed ${this.count} chunks [${Math.round(this.size * 1000) / 1000} ${this.sizeMultiplicationToUnit(this.sizeMultiplication)}].`
+        return `ProcessingCounter processed ${this.count}
+             chunks [${Math.round(this.size * 1000) / 1000}
+             ${this.sizeMultiplicationToUnit(this.sizeMultiplication)}].`;
     }
-    
+
     json() {
         return {
             count: this.count,
             unit: this.sizeMultiplicationToUnit(this.sizeMultiplication),
             size: this.size
-        }
+        };
     }
 }

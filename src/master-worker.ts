@@ -34,11 +34,11 @@ export class MasterWorker extends EpDbWorker {
 
     constructor() {
         super();
-        console.log('> Welcome to epjs >')
-        console.log("Master pid:", process.pid)
+        console.log('> Welcome to epjs >');
+        console.log('Master pid:', process.pid);
 
         if (ConfigProvider.isDev) {
-            console.warn('RUNNING IN DEVELOPMENT MODE.')
+            console.warn('RUNNING IN DEVELOPMENT MODE.');
         }
 
         this.forkCores();
@@ -49,7 +49,7 @@ export class MasterWorker extends EpDbWorker {
 
     runningJobs = 0;
     forkCores() {
-        let cpus = ConfigProvider.get().cpus || os.cpus().length;
+        const cpus = ConfigProvider.get().cpus || os.cpus().length;
         console.log(`Forking for ${cpus} CPUs`);
         for (let i = 0; i < cpus; i++) {
             cluster.fork();
@@ -73,8 +73,8 @@ export class MasterWorker extends EpDbWorker {
 
         if (ConfigProvider.isDev) {
             this.app.use(function (req: any, res: any, next: any) {
-                res.header("Access-Control-Allow-Origin", "*");
-                res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+                res.header('Access-Control-Allow-Origin', '*');
+                res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
                 next();
             });
         }
@@ -108,13 +108,13 @@ export class MasterWorker extends EpDbWorker {
                         jobDefinitionId: jobId,
                         config: jobConfig,
                         status: JobStatusEnum.STORED
-                    }
+                    };
                     this.db.storeJob(jobDBO, (job) => {
                         res.set('Content-Type', 'application/json');
                         res.json({ jobDBO: jobDBO });
-                    })
-                })
-            })
+                    });
+                });
+            });
 
 
         });
@@ -145,13 +145,15 @@ export class MasterWorker extends EpDbWorker {
 
         fs.writeFileSync(pathZip, data);
         FileProvider.createDirectory(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
-        var readStream = fs.createReadStream(pathZip);
-        var writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
+        const readStream = fs.createReadStream(pathZip);
+        const writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
         readStream
             .pipe(unzip.Parse())
             .pipe(writeStream);
         fs.unlink(pathZip, (err) => {
-            if (err) throw err;
+            if (err) {
+                throw err;
+            }
         });
     }
 
@@ -159,8 +161,8 @@ export class MasterWorker extends EpDbWorker {
         const workerNames = Object.keys(cluster.workers);
         const workableWorkers = workerNames.map(name => {
             return cluster.workers[name];
-        }).filter(worker => worker.process.pid != process.pid);
-        console.log('workers left:', workableWorkers.length)
+        }).filter(worker => worker.process.pid !== process.pid);
+        console.log('workers left:', workableWorkers.length);
         return workableWorkers[Math.round(Math.random() * 1000) % workableWorkers.length];
     }
 }

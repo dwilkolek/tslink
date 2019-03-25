@@ -1,11 +1,11 @@
-import { Stream } from "stream";
-import { NodeCounter } from "./counters/node-counter";
+import { Stream } from 'stream';
+import { NodeCounter } from './counters/node-counter';
 
 export class CounterStore {
 
     constructor(private uuid: string, private jobName: string) { }
 
-    counters: { [key: string]: NodeCounter } = {}
+    counters: { [key: string]: NodeCounter } = {};
 
     public init(name: string) {
         this.counters[name] = new NodeCounter(name);
@@ -28,7 +28,7 @@ export class CounterStore {
         transformStream._transform = (chunk: Buffer, encoding: string, done) => {
             this.putIn(name, chunk);
             done(null, chunk);
-        }
+        };
         return transformStream;
     }
 
@@ -37,7 +37,7 @@ export class CounterStore {
         transformStream._transform = (chunk: Buffer, encoding: string, done) => {
             this.putOut(name, chunk);
             done(null, chunk);
-        }
+        };
         return transformStream;
     }
 
@@ -54,9 +54,9 @@ export class CounterStore {
     }
 
     public prettyPrint() {
-        let header = `------------------------------------------------------------\nJob: ${this.jobName}\n`;
-        let footer = `\n------------------------------------------------------------\n`;
-        let body = this.counterNames.map(name => {
+        const header = `------------------------------------------------------------\nJob: ${this.jobName}\n`;
+        const footer = `\n------------------------------------------------------------\n`;
+        const body = this.counterNames.map(name => {
             return '\t' + this.counters[name].prettyPrint();
         }).join('\n');
         return header + body + footer;
@@ -69,7 +69,7 @@ export class CounterStore {
             processes: this.counterNames.map(counterName => {
                 return this.counters[counterName].json();
             })
-        }
+        };
     }
 }
 

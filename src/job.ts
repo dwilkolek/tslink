@@ -1,14 +1,11 @@
-import { Stream, pipeline } from "stream";
-import { CounterStore } from "./counter-store";
-import { EpReadStream } from "./streams/ep-read-stream";
-import { EpTransformStream } from "./streams/ep-transform-stream";
-import { EpWriteStream } from "./streams/ep-write-stream";
+import { Stream } from 'stream';
+import { CounterStore } from './counter-store';
 
-import { Readable } from "stream";
-import { JobDefinition } from "./types/job-definition";
-import { JobConfig } from "./types/job-config";
-import { ConnectionNext } from "./types/connection-next";
-import { Db } from "./db";
+import { Readable } from 'stream';
+import { JobDefinition } from './types/job-definition';
+import { JobConfig } from './types/job-config';
+import { ConnectionNext } from './types/connection-next';
+import { Db } from './db';
 
 
 const process = require('process');
@@ -20,8 +17,9 @@ export class Job {
     private pipelines: any[] = [];
     private workingEndPipes = 0;
 
-    constructor(private db: Db, public _id: string, private jobDescription: JobDefinition, private config: JobConfig, private workspaceDirectory: string) {
-        console.log('Working on:', process.pid, jobDescription, config)
+    constructor(private db: Db, public _id: string, private jobDescription: JobDefinition,
+        private config: JobConfig, private workspaceDirectory: string) {
+        console.log('Working on:', process.pid, jobDescription, config);
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
         this.sourceNames.forEach(source => {
             this._counterStore.init(source);
@@ -44,13 +42,13 @@ export class Job {
             this.jobDescription.beforeProcessing(this.config, this.workspaceDirectory, () => {
 
                 this.jobDescription.connections.forEach((connection) => {
-                    var streamed = this.getReadStream(connection.from);
+                    let streamed = this.getReadStream(connection.from);
                     this.streams[connection.from] = streamed;
-                    const readerOutStream = this.counterStore.collectCounterOut(connection.from)
-                    streamed = streamed.pipe(readerOutStream)
-                    var connectionNext = this.pipeNext(streamed, connection.to);
+                    const readerOutStream = this.counterStore.collectCounterOut(connection.from);
+                    streamed = streamed.pipe(readerOutStream);
+                    const connectionNext = this.pipeNext(streamed, connection.to);
                     this.pipelines.push(connectionNext);
-                })
+                });
 
                 this.timeout = this.getTimeoutIsDone(resolve);
             });
@@ -64,18 +62,18 @@ export class Job {
                 statistics: this.counterStore.json(),
             }, () => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
-            })
+            });
         }, 20000);
     }
 
     getTimeoutIsDone(resolve: any) {
         return setTimeout(() => {
-            console.log('this.workingEndPipes', this.workingEndPipes)
+            console.log('this.workingEndPipes', this.workingEndPipes);
             if (this.workingEndPipes === 0) {
                 clearTimeout(this.statisticCounter);
                 this.jobDescription.afterProcessing(this.config, this.workspaceDirectory, () => {
                     resolve(this);
-                })
+                });
             } else {
                 this.timeout = this.getTimeoutIsDone(resolve);
             }
@@ -84,21 +82,21 @@ export class Job {
     }
     private pipeNext(stream: any, connectionNext: ConnectionNext): any {
         if (connectionNext) {
-            var transform = this.getTransformStream(connectionNext.name);
-            var write = this.getWriteStream(connectionNext.name);
+            const transform = this.getTransformStream(connectionNext.name);
+            const write = this.getWriteStream(connectionNext.name);
             const isTransform = transform != null;
 
             const inStream = this.counterStore.collectCounterIn(connectionNext.name);
 
-            var streamNext = stream
+            let streamNext = stream
                 .pipe(inStream);
             streamNext = isTransform ? streamNext.pipe(transform) : streamNext.pipe(write);
-            if (!isTransform) {                
+            if (!isTransform) {
                 if (write) {
                     this.workingEndPipes++;
                     write.on('close', () => {
                         this.workingEndPipes--;
-                    })
+                    });
                 }
             }
             if (isTransform) {
@@ -116,7 +114,7 @@ export class Job {
     private getWriteStream(name: string) {
         const sinkNode = this.jobDescription.sinks[name];
         if (sinkNode) {
-            return this.jobDescription.sinks[name].get(this.config, this.workspaceDirectory)
+            return this.jobDescription.sinks[name].get(this.config, this.workspaceDirectory);
         }
         return null;
     }

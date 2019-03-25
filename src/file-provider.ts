@@ -1,4 +1,4 @@
-import { ConfigProvider } from "./config-provider";
+import { ConfigProvider } from './config-provider';
 
 const path = require('path');
 const fs = require('fs');
@@ -20,7 +20,7 @@ export class FileProvider {
             if (e.code !== 'EEXIST') {
                 console.warn('Failed to create directory at:', path.resolve(dirPath), e);
             }
-        };
+        }
     }
 
     public static rmdirAsync(path, callback) {
@@ -30,8 +30,9 @@ export class FileProvider {
                 callback(err, []);
                 return;
             }
-            var wait = files.length,
-                count = 0,
+
+            let count = 0;
+            const wait = files.length,
                 folderDone = function (err?) {
                     count++;
                     // If we cleaned out all the files, continue
@@ -46,9 +47,9 @@ export class FileProvider {
             }
 
             // Remove one or more trailing slash to keep from doubling up
-            path = path.replace(/\/+$/, "");
+            path = path.replace(/\/+$/, '');
             files.forEach(function (file) {
-                var curPath = path + "/" + file;
+                const curPath = path + '/' + file;
                 fs.lstat(curPath, function (err, stats) {
                     if (err) {
                         callback(err, []);
@@ -62,5 +63,5 @@ export class FileProvider {
                 });
             });
         });
-    };
+    }
 }

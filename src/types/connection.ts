@@ -1,4 +1,4 @@
-import { ConnectionNext } from "./connection-next";
+import { ConnectionNext } from './connection-next';
 
 export interface Connection {
     from: string;

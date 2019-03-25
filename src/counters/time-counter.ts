@@ -3,8 +3,8 @@ export class TimeCounter {
     currentUnit = 0;
     hits = 0;
 
-    units = ['ms', 's', 'min', 'h', 'd']
-    divs = [1000, 60, 60, 24]
+    units = ['ms', 's', 'min', 'h', 'd'];
+    divs = [1000, 60, 60, 24];
 
     prettyPrint() {
         return `TimeCounter took ${Math.round(this.totalTime * 100) / 100}${this.units[this.currentUnit]}`;

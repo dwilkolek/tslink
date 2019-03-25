@@ -1,4 +1,4 @@
-import { Config } from "./config";
+import { Config } from './config';
 const fs = require('fs');
 
 export class ConfigProvider {
@@ -10,29 +10,26 @@ export class ConfigProvider {
     private constructor() {
         this.config = {
             cpus: 4,
-            db : {
-                "url": "mongodb://localhost:27017",
-                "name": "epjs"
+            db: {
+                'url': 'mongodb://localhost:27017',
+                'name': 'epjs'
             },
-            jobsDirectory: "./jobs",
+            jobsDirectory: './jobs',
             tempZipDirectory: './zips',
             workspaceDirectory: './workspace',
             limitJobsPerWorker: 1
         };
 
-        if (process.argv.filter(arg => arg==='dev').length === 1) {
-            
-        }
         try {
-            let userConfig = JSON.parse(fs.readFileSync('./epjs-config.json').toString());
-            this.config = Object.assign(this.config, userConfig);
+            const userConfig = JSON.parse(fs.readFileSync('./epjs-config.json').toString());
+            Object.assign(this.config, userConfig);
         } catch (e) {
             console.warn('File epjs-config.json is missing. Using default config');
         }
     }
-    public static isDev = process.argv.filter(arg => arg==='dev').length === 1;
+    public static isDev = process.argv.filter(arg => arg === 'dev').length === 1;
 
-    public static uiPath = ConfigProvider.isDev ?  './ui/dist/ui/' : '../ui/dist/ui';
+    public static uiPath = ConfigProvider.isDev ? './ui/dist/ui/' : '../ui/dist/ui';
     public static depsPath = './node_modules';
 
     public static getInstance(): ConfigProvider {

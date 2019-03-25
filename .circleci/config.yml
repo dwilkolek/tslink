@@ -33,7 +33,7 @@ jobs:
             - node_modules
             - ui/node_modules
           key: v1-dependencies-{{ checksum "package.json" }}-{{ checksum "ui/package.json" }}
-          
+    
       # run test release!
       - run: npm run release
       - run: ls -la release

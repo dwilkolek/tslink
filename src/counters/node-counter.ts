@@ -1,5 +1,5 @@
-import { ProcessingCounter } from "./process-counter";
-import { TimeCounter } from "./time-counter";
+import { ProcessingCounter } from './process-counter';
+import { TimeCounter } from './time-counter';
 
 export class NodeCounter {
     name: string;
@@ -15,11 +15,11 @@ export class NodeCounter {
     }
 
     putIn(buff: Buffer) {
-        this.in.put(buff)
+        this.in.put(buff);
     }
 
     putOut(buff: Buffer) {
-        this.out.put(buff)
+        this.out.put(buff);
     }
 
     putTime(time: number) {
@@ -27,7 +27,10 @@ export class NodeCounter {
     }
 
     prettyPrint() {
-        return `Node: ${this.name}:\n\tin: ${this.in.prettyPrint()} \n\tout: ${this.out.prettyPrint()}\n\ttime: ${this.time.prettyPrint()}\n\n`
+        return `Node: ${this.name}:
+        \n\tin: ${this.in.prettyPrint()}
+        \n\tout: ${this.out.prettyPrint()}
+        \n\ttime: ${this.time.prettyPrint()}\n\n`;
     }
 
     json() {
@@ -36,7 +39,7 @@ export class NodeCounter {
             in: this.in.json(),
             out: this.out.json(),
             time: this.time.json(),
-        }
+        };
     }
 
 }
