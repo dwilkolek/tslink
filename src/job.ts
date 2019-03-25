@@ -20,7 +20,7 @@ export class Job {
     private pipelines: any[] = [];
     private workingEndPipes = 0;
 
-    constructor(private db:Db, public _id: string, private jobDescription: JobDefinition, private config: JobConfig, private workspaceDirectory: string) {
+    constructor(private db: Db, public _id: string, private jobDescription: JobDefinition, private config: JobConfig, private workspaceDirectory: string) {
         console.log('Working on:', process.pid, jobDescription, config)
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
         this.sourceNames.forEach(source => {
@@ -60,8 +60,8 @@ export class Job {
     getStatisticCounterTimeout() {
         return setTimeout(() => {
             this.db.updateJob({
-                _id:this._id,
-                statistics:this.counterStore.json(),
+                _id: this._id,
+                statistics: this.counterStore.json(),
             }, () => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
             })
@@ -70,6 +70,7 @@ export class Job {
 
     getTimeoutIsDone(resolve: any) {
         return setTimeout(() => {
+            console.log('this.workingEndPipes', this.workingEndPipes)
             if (this.workingEndPipes === 0) {
                 clearTimeout(this.statisticCounter);
                 this.jobDescription.afterProcessing(this.config, this.workspaceDirectory, () => {
@@ -92,11 +93,13 @@ export class Job {
             var streamNext = stream
                 .pipe(inStream);
             streamNext = isTransform ? streamNext.pipe(transform) : streamNext.pipe(write);
-            if (!isTransform) {
-                this.workingEndPipes++;
-                streamNext.on('finish', () => {
-                    this.workingEndPipes--;
-                })
+            if (!isTransform) {                
+                if (write) {
+                    this.workingEndPipes++;
+                    write.on('close', () => {
+                        this.workingEndPipes--;
+                    })
+                }
             }
             if (isTransform) {
                 const outStream = this.counterStore.collectCounterOut(connectionNext.name);
