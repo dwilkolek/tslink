@@ -105,7 +105,7 @@ export class Db {
     private get db(): Promise<any> {
         return new Promise(resolve => {
             if (!this._db) {
-                MongoClient.connect(ConfigProvider.get().db.url, (err: any, client: any) => {
+                MongoClient.connect(ConfigProvider.get().db.url, { useNewUrlParser: true }, (err: any, client: any) => {
                     this._db = client.db(ConfigProvider.get().db.name);
                     resolve(this._db);
                 });

@@ -81,12 +81,11 @@ export class MasterWorker extends EpDbWorker {
 
         this.app.post('/api/job', (req: any, res: any) => {
             const jobDefinition = {
-                name: req.param('name')
+                name: req.params.name
             };
             this.db.storeJobDefinition(jobDefinition, jobDefinition => {
                 res.set('Content-Type', 'application/json');
                 this.storeToDisk(req.files.job.data, jobDefinition._id || '');
-
                 res.json({ id: jobDefinition._id });
             });
 
@@ -100,8 +99,8 @@ export class MasterWorker extends EpDbWorker {
         });
 
         this.app.post('/api/job/start', (req: any, res: any) => {
-            const jobId = req.param('jobId');
-            const configId = req.param('configId');
+            const jobId = req.params.jobId;
+            const configId = req.params.configId;
             this.db.findJobDefinition(jobId).then(jobDefinition => {
                 this.db.findJobConfig(configId).then(jobConfig => {
                     const jobDBO: JobDBO = {
