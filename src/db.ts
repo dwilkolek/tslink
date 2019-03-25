@@ -32,7 +32,6 @@ export class Db {
     public updateJob(jobDBO: JobDBO, callback?: (jobDBO: JobDBO) => void) {
         this.jobs.then((collection: any) => {
             collection.updateOne({ _id: jobDBO._id }, { $set: jobDBO }, function (err, res) {
-                console.error('error update', err);
                 callback && callback(jobDBO);
             })
         });
@@ -105,9 +104,7 @@ export class Db {
                 return new Promise(resolve => {
                     if (!this._db) {
                         MongoClient.connect(ConfigProvider.get().db.url, (err: any, client: any) => {
-                            console.log("Connected successfully to server");
                             this._db = client.db(ConfigProvider.get().db.name);
-
                             resolve(this._db);
                         });
                     } else {

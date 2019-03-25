@@ -102,7 +102,6 @@ export class MasterWorker extends EpDbWorker {
         this.app.post('/api/job/start', (req: any, res: any) => {
             const jobId = req.param('jobId');
             const configId = req.param('configId');
-            console.log('starting', jobId, configId)
             this.db.findJobDefinition(jobId).then(jobDefinition => {
                 this.db.findJobConfig(configId).then(jobConfig => {
                     const jobDBO: JobDBO = {
@@ -153,7 +152,6 @@ export class MasterWorker extends EpDbWorker {
             .pipe(writeStream);
         fs.unlink(pathZip, (err) => {
             if (err) throw err;
-            console.log(`successfully deleted ${pathZip}`);
         });
     }
 

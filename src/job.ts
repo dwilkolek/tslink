@@ -94,7 +94,6 @@ export class Job {
             if (!isTransform) {
                 this.workingEndPipes++;
                 streamNext.on('finish', () => {
-                    console.log('pipe finished')
                     this.workingEndPipes--;
                 })
             }
