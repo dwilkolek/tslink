@@ -1,7 +1,10 @@
 <div class="nested">
   <h3>
-      Job name: {{job.name}} [ {{job.uuid}} ]  <button (click)="toggle()">details</button>
+      Job name: {{job.name}} [ {{job._id}} ] - {{job.status}}<button *ngIf="job.statistics?.processes != null" (click)="toggle()">details</button>
   </h3>
-  <app-stats [class.hidden]="hidden" *ngFor="let process of job.processes" [process]="process"></app-stats>
+  <ng-template [ngIf]="job.statistics">
+      <app-stats [class.hidden]="hidden" *ngFor="let process of job.statistics.processes" [process]="process"></app-stats>
+  </ng-template>
+  
 </div>
 <hr />

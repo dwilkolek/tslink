@@ -1,16 +1,42 @@
-<p>
-  job: <input type="file" (change)="storeJob($event)" placeholder="Upload job" accept=".zip"><br />
-  name: <input [value]="name" (input)="name = $event.target.value">
+<div class="jobs">
+  <app-job *ngFor="let job of jobs" [job]="job"> </app-job>
+</div>
+<hr />
+<div class="manager">
+  <div class="job-definitions">
+    Job Definitions
+    <div class="upload-form">
 
-  <br /><br />
-  config: 
-  <input type="file" (change)="storeConfig($event)" placeholder="Upload config" accept=".json">
-</p>
-<br /><br />
-configId: <input [value]="configId" (input)="configId = $event.target.value"><br />
-jobId: <input [value]="jobId" (input)="jobId = $event.target.value">
+      <label for="job-definition">Job definition zip fip</label>
+      <input name="job-definition" type="file" #jobDefinitionFile placeholder="Upload job" accept=".zip"><br />
+      <label for="job-definition-name">Job definition name</label>
+      <input name="job-definition-name" [value]="jobDefinitionName" (input)="jobDefinitionName = $event.target.value">
+      <br />
+      <button (click)="uploadJobDefinition()">Upload Job</button>
+    </div>
+    <ul>
+      <li *ngFor="let jobDefinition of jobDefinitions" [class.selected]="selectedJobDefinition == jobDefinition._id"
+        (click)="selectJobDefinition($event, jobDefinition._id)">
+        {{jobDefinition.name || "&lt;no-name&gt;"}} <span class="element-id">{{jobDefinition._id}}</span>
+      </li>
+    </ul>
+  </div>
+  <div class="job-configs">
+
+    Job Configs
+    <div class="upload-form">
+      <label for="job-config">Config json file</label>
+      <input name="job-config" type="file" #jobConfigFile placeholder="Upload config" accept=".json">
+      <br />
+      <button (click)="uploadJobConfig()">Upload Config</button>
+    </div>
+    <ul>
+      <li *ngFor="let jobConfig of jobConfigs" [class.selected]="selectedJobConfig == jobConfig._id"
+        (click)="selectJobConfig($event, jobConfig._id)">
+        {{jobConfig.name}} <span class="element-id">{{jobConfig._id}}</span>
+      </li>
+    </ul>
+  </div>
+</div>
 <button (click)="startJob()">Run Job</button>
-
-<br /><br /><br /><br />
-
-<pre>{{jobDBO | json}}</pre>
+<button (click)="refresh()">Refresh Data in Manager</button>

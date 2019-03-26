@@ -1,0 +1,27 @@
+.manager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    >div {
+        margin: 10px;
+    }
+    .upload-form {
+        min-height: 100px;
+        border: 1px solid #000000;
+        background: #cccccc;
+        padding: 20px;
+    }
+    .element-id {
+        color: #666666;
+        font-size: 0.96em;
+        &:before {
+            content: "["
+        }
+
+        &:after {
+            content: "]"
+        }
+    }
+    .selected {
+        background: #8fe9ff;
+    }
+}
