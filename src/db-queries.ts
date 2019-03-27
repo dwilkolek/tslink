@@ -1,4 +1,7 @@
-import { Collection, Db, FindOneAndUpdateOption, InsertOneWriteOpResult, MongoClient, ObjectID, UpdateWriteOpResult } from 'mongodb';
+import {
+    Collection, Cursor, Db, FindOneAndUpdateOption, InsertOneWriteOpResult,
+    MongoClient, ObjectID, UpdateWriteOpResult,
+} from 'mongodb';
 import { ConfigProvider } from './config-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
@@ -8,6 +11,30 @@ import { IJobDefinitionDBO } from './types/job-definition-dbo';
 export class DBQueries {
 
     private mongoDb?: Db;
+
+    public findJobDefinitions(): Promise<Cursor<IJobDefinitionDBO>> {
+        return this.jobsDefinitions.then((collection) => {
+            return new Promise<Cursor<IJobDefinitionDBO>>((resolve) => {
+                resolve(collection.find({}, {}));
+            });
+        });
+    }
+
+    public findJobConfigs(): Promise<Cursor<IJobConfig>> {
+        return this.jobsConfigs.then((collection) => {
+            return new Promise<Cursor<IJobConfig>>((resolve) => {
+                resolve(collection.find({}, {}));
+            });
+        });
+    }
+
+    public findJobs(): Promise<Cursor<IJobConfig>> {
+        return this.jobs.then((collection) => {
+            return new Promise<Cursor<IJobConfig>>((resolve) => {
+                resolve(collection.find({}, {}));
+            });
+        });
+    }
 
     public storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO, callback: (insertResult: InsertOneWriteOpResult) => void) {
         this.jobsDefinitions.then((collection) => {
@@ -54,6 +81,16 @@ export class DBQueries {
                     }, options).then((data) => {
                         resolve(data.value);
                     });
+            });
+        });
+    }
+
+    public findJob(id: string) {
+        return this.jobs.then((collection) => {
+            return new Promise<IJobDBO>((resolve) => {
+                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
+                    resolve(data as IJobDBO);
+                });
             });
         });
     }

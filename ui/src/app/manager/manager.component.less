@@ -1,0 +1,55 @@
+// .manager {
+//     display: grid;
+//     grid-template-columns: 1fr 1fr;
+//     >div {
+//         margin: 10px;
+//     }
+//     .upload-form {
+//         min-height: 100px;
+//         border: 1px solid #000000;
+//         background: #cccccc;
+//         padding: 20px;
+//     }
+//     .element-id {
+//         color: #666666;
+//         font-size: 0.96em;
+//         &:before {
+//             content: "["
+//         }
+
+//         &:after {
+//             content: "]"
+//         }
+//     }
+//     .selected {
+//         background: #8fe9ff;
+//     }
+// }
+.row {
+    border-right: 1px solid #999999;
+    &+row {
+        border-left: 1px solid #999999;
+    }
+}
+form {
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.actions {
+    button {
+        margin: 10px 15px;
+    }
+}
+.listings {
+    .selected {
+        color: rgb(200, 255, 0);
+        background: #333333;
+    }
+    >div {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+}

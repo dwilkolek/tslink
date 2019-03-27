@@ -3,6 +3,7 @@ import * as express from 'express';
 import * as expressFileupload from 'express-fileupload';
 import * as fs from 'fs';
 import * as fstream from 'fstream';
+import { Cursor } from 'mongodb';
 import * as os from 'os';
 import * as path from 'path';
 import { Transform } from 'stream';
@@ -76,18 +77,57 @@ export class MasterWorker extends EpDbWorker {
             });
         }
 
-        app.post('/api/job', (req: express.Request, res: express.Response) => {
+        app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+            if (req.url.indexOf('/api') === 0) {
+                res.set('Content-Type', 'application/json');
+            }
+            next();
+        });
+
+        app.get('/api/job', (req: express.Request, res: express.Response) => {
+            this.db.findJobs().then((cursor) => {
+                this.collect(cursor, (data) => {
+                    res.json(data);
+                });
+            });
+        });
+
+        app.get('/api/job/:jobId', (req: express.Request, res: express.Response) => {
+            // tslint:disable-next-line:no-unsafe-any
+            const jobId = req.params.jobId as string;
+
+            this.db.findJob(jobId).then((data) => {
+                res.json(data);
+            });
+        });
+
+        app.get('/api/job-definition', (req: express.Request, res: express.Response) => {
+            this.db.findJobDefinitions().then((cursor) => {
+                this.collect(cursor, (data) => {
+                    res.json(data);
+                });
+            });
+        });
+
+        app.get('/api/job-config', (req: express.Request, res: express.Response) => {
+            this.db.findJobConfigs().then((cursor) => {
+                this.collect(cursor, (data) => {
+                    res.json(data);
+                });
+            });
+        });
+
+        app.post('/api/job-definition', (req: express.Request, res: express.Response) => {
             const jobDefinition = {
                 // tslint:disable-next-line:no-unsafe-any
-                name: req.params.name,
+                name: req.body.name,
             };
             if (req.files != null && req.files.job != null) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.job) ? req.files.job[0] : req.files.job;
                 this.db.storeJobDefinition(jobDefinition, (storeResult) => {
-                    res.set('Content-Type', 'application/json');
                     this.storeToDisk(uploadedFile.data, storeResult.insertedId.toHexString() || '');
 
-                    res.json({ id: storeResult.insertedId });
+                    res.json({ id: storeResult.insertedId.toHexString() });
                 });
             } else {
                 res.json({ id: null });
@@ -95,12 +135,11 @@ export class MasterWorker extends EpDbWorker {
 
         });
 
-        app.post('/api/config', (req: express.Request, res: express.Response) => {
+        app.post('/api/job-config', (req: express.Request, res: express.Response) => {
             if (req.files != null && req.files.config) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.config) ? req.files.config[0] : req.files.config;
                 this.db.storeJobConfig(JSON.parse(uploadedFile.data.toString()) as IJobConfig, (storeResult) => {
-                    res.set('Content-Type', 'application/json');
-                    res.json({ id: storeResult.insertedId });
+                    res.json({ id: storeResult.insertedId.toHexString() });
                 });
             } else {
                 res.json({ id: null });
@@ -121,13 +160,12 @@ export class MasterWorker extends EpDbWorker {
                         };
                         /* tslint:enable:no-unsafe-any */
                         this.db.storeJob(jobDBO, (result) => {
-                            res.set('Content-Type', 'application/json');
-                            res.json({id: result.insertedId});
+                            res.json({ id: result.insertedId });
                         });
                     });
                 });
             } else {
-                res.json({ });
+                res.json({});
             }
         });
 
@@ -151,6 +189,15 @@ export class MasterWorker extends EpDbWorker {
         });
 
         return app;
+    }
+
+    public collect<T>(cursor: Cursor<T>, done: (data: T[]) => void) {
+        const list: T[] = [];
+        cursor.forEach((element: T) => {
+            list.push(element);
+        }, () => {
+            done(list);
+        });
     }
 
     private storeToDisk(data: Buffer, jobId: string) {

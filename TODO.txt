@@ -1,8 +1,8 @@
 TODO:
 make jobs recoverable
-add logger
+check for abbandoned jobs (restart of epjs)
 add tests
-improve user expirience
+add storing offset functionality
 
 DONE:
 run jobs in spearate threads/processes

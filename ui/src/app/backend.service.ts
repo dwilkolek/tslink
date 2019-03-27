@@ -10,11 +10,23 @@ export class BackendService {
   constructor(private http: HttpClient) {
   }
 
-  getStats() {
-    return this.http.get(`${environment.apiUrl}stats`);
+  getJobs() {
+    return this.http.get(`${environment.apiUrl}job`);
   }
 
-  storeJob(name: string, file: File) {
+  getJobConfigs() {
+    return this.http.get(`${environment.apiUrl}job-config`);
+  }
+
+  getJobDefinitions() {
+    return this.http.get(`${environment.apiUrl}job-definition`);
+  }
+
+  getJob(id: string) {
+    return this.http.get(`${environment.apiUrl}job/${id}`);
+  }
+
+  storeJobDefinition(name: string, file: File) {
     const formData = new FormData();
     formData.append('job', file);
     formData.append('name', name);
@@ -25,10 +37,10 @@ export class BackendService {
       reportProgress: true,
     };
 
-    const req = new HttpRequest('POST', `${environment.apiUrl}job`, formData, options);
+    const req = new HttpRequest('POST', `${environment.apiUrl}job-definition`, formData, options);
     return this.http.request(req);
   }
-  storeConfig(file: File) {
+  storeJobConfig(file: File) {
     const formData = new FormData();
     formData.append('config', file);
 
@@ -40,7 +52,7 @@ export class BackendService {
       // responseType: 'json'
     };
 
-    const req = new HttpRequest('POST', `${environment.apiUrl}config`, formData, options);
+    const req = new HttpRequest('POST', `${environment.apiUrl}job-config`, formData, options);
     return this.http.request(req);
   }
   startJob(jobId: string, configId: string) {
