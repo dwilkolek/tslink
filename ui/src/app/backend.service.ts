@@ -22,6 +22,10 @@ export class BackendService {
     return this.http.get(`${environment.apiUrl}job-definition`);
   }
 
+  getJob(id: string) {
+    return this.http.get(`${environment.apiUrl}job/${id}`);
+  }
+
   storeJobDefinition(name: string, file: File) {
     const formData = new FormData();
     formData.append('job', file);

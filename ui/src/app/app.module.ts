@@ -10,6 +10,13 @@ import { StatsComponent } from './job/stats/stats.component';
 import { TimeCounterComponent } from './job/stats/time-counter/time-counter.component';
 import { InOutCounterComponent } from './job/stats/in-out-counter/in-out-counter.component';
 import { ManagerComponent } from './manager/manager.component';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
+
+import defaultLocale from '@angular/common/locales/en';
+import { registerLocaleData } from '@angular/common';
+registerLocaleData(defaultLocale, 'en');
 
 @NgModule({
   declarations: [
@@ -18,12 +25,15 @@ import { ManagerComponent } from './manager/manager.component';
     StatsComponent,
     TimeCounterComponent,
     InOutCounterComponent,
-    ManagerComponent
+    ManagerComponent,
+    SidebarComponent,
+    DashboardComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    NgbModule
   ],
   providers: [],
   bootstrap: [AppComponent]

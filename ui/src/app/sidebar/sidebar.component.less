@@ -1,0 +1,35 @@
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    padding: 0 20px 20px 20px;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    border-right: 1px solid #eee;
+    background: #333333;
+    padding-left: 0;
+    padding-right: 0;
+
+    .nav {
+        margin-bottom: 20px;
+    }
+    .nav-item {
+        width: 100%;  
+        +.nav-item {
+            margin-left: 0;
+        }
+
+        .nav-link {
+            border-radius: 0;
+            color: #eee;
+            font-size: 1.07em;
+            &:hover {
+                color: rgb(200, 255, 0)
+            }
+        }
+    }
+    
+  }
+  

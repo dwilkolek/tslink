@@ -16,15 +16,11 @@ export class ManagerComponent {
 
   constructor(private backend: BackendService) {
     this.refreshAll();
-    setInterval(() => {
-      this.refreshJobs();
-    }, 2000);
   }
 
 
   jobDefinitions: any[];
   jobConfigs: any[];
-  jobs: any[];
 
 
   selectedJobConfig: string = null;
@@ -33,11 +29,15 @@ export class ManagerComponent {
   jobDefinitionName: string = '';
 
   startJob() {
-    this.backend.startJob(this.selectedJobDefinition, this.selectedJobConfig).subscribe((res: any) => {
-      this.selectedJobConfig = null;
-      this.selectedJobDefinition = null;
-      this.refreshJobs();
-    });
+    if (this.selectedJobDefinition && this.selectedJobConfig) {
+      this.backend.startJob(this.selectedJobDefinition, this.selectedJobConfig).subscribe((res: any) => {
+        this.selectedJobConfig = null;
+        this.selectedJobDefinition = null;
+        alert('Job stored for execution.');
+      });
+    } else {
+      alert('Select job & config.');
+    }
   }
 
 
@@ -59,7 +59,6 @@ export class ManagerComponent {
   refreshAll() {
     this.refreshJobConfigs();
     this.refreshJobDefinitions();
-    this.refreshJobs();
   }
 
   refreshJobConfigs() {
@@ -74,11 +73,7 @@ export class ManagerComponent {
     });
   }
 
-  refreshJobs() {
-    this.backend.getJobs().subscribe((data) => {
-      this.jobs = <any[]>data;
-    });
-  }
+
 
   uploadJobConfig() {
     if (this.jobConfigFileInput.nativeElement.files[0]) {

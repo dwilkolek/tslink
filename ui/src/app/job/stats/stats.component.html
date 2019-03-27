@@ -1,8 +1,8 @@
-<div class="nested">
-  <h4>
-    Process: {{process.name}}
-  </h4>
-  <app-in-out-counter [counter]="process.in" title="In counter"></app-in-out-counter>
-  <app-in-out-counter [counter]="process.out" title="Out counter"></app-in-out-counter>
-  <app-time-counter [counter]="process.time" title="Time counter"></app-time-counter>
+<h4>
+  Process: {{process.name}}
+</h4>
+<div class="row">
+  <app-in-out-counter class="counter col-4 " [counter]="process.in" title="In counter"></app-in-out-counter>
+  <app-in-out-counter class="counter col-4 " [counter]="process.out" title="Out counter"></app-in-out-counter>
+  <app-time-counter class="counter col-4 " [counter]="process.time" title="Time counter"></app-time-counter>
 </div>

@@ -1,0 +1,38 @@
+<h1>Dashboard</h1>
+<!-- <div class="jobs">
+  <app-job *ngFor="let job of jobs" [job]="job"> </app-job>
+</div> -->
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Job Id</th>
+      <th scope="col">Name</th>
+      <th scope="col">Status</th>
+      <th scope="col">Start Time</th>
+      <th scope="col">End Time</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let job of jobs; index as i" (click)="goToJob(job)">
+      <th scope="row">{{ i + 1 }}</th>
+      <td>
+        {{ job._id }}
+      </td>
+      <td>
+        {{ job.name }}
+      </td>
+      <td>
+        {{ job.status }}
+      </td>
+      <td>
+        {{ job.startDateTime | date:'medium'}}
+      </td>
+      <td>
+        {{ job.endDateTime | date:'medium'}}
+      </td>
+    </tr>
+  </tbody>
+</table>
