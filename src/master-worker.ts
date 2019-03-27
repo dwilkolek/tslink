@@ -90,6 +90,15 @@ export class MasterWorker extends EpDbWorker {
             });
         });
 
+        app.get('/api/job/:jobId', (req: express.Request, res: express.Response) => {
+            // tslint:disable-next-line:no-unsafe-any
+            const jobId = req.params.jobId as string;
+
+            this.db.findJob(jobId).then((data) => {
+                res.json(data);
+            });
+        });
+
         app.get('/api/job-definition', (req: express.Request, res: express.Response) => {
             this.db.findJobDefinitions().then((cursor) => {
                 this.collect(cursor, (data) => {

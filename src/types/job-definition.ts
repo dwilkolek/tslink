@@ -1,5 +1,5 @@
 import { IConnection } from './connection';
-import { IJobConfig } from './job-config';
+import { JobContext } from './job-context';
 import { ISinkDescription } from './sink-description';
 import { ISourceDescription } from './source-description';
 import { ITransformDescription } from './transform-descriptions';
@@ -10,6 +10,6 @@ export interface IJobDefinition {
     sources: { [key: string]: ISourceDescription };
     transformers: { [key: string]: ITransformDescription };
     sinks: { [key: string]: ISinkDescription };
-    beforeProcessing: (config: IJobConfig, workspace: string, done: () => void) => void;
-    afterProcessing: (config: IJobConfig, workspace: string, done: () => void) => void;
+    beforeProcessing: (jobContext: JobContext, done: () => void) => void;
+    afterProcessing: (jobContext: JobContext, done: () => void) => void;
 }

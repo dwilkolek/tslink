@@ -5,6 +5,7 @@ import { CounterStore } from './counter-store';
 import { DBQueries } from './db-queries';
 import { IConnectionNext } from './types/connection-next';
 import { IJobConfig } from './types/job-config';
+import { JobContext } from './types/job-context';
 import { IJobDefinition } from './types/job-definition';
 
 export class Job {
@@ -34,8 +35,8 @@ export class Job {
     private statisticCounter?: NodeJS.Timeout;
 
     constructor(private db: DBQueries, public _id: string, private jobDescription: IJobDefinition,
-                private config: IJobConfig, private workspaceDirectory: string) {
-        console.log('Working on:', process.pid, jobDescription, config);
+                private jobContext: JobContext) {
+        console.log('Working on:', process.pid, jobDescription, jobContext);
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
         this.sourceNames.forEach((source) => {
             this._counterStore.init(source);
@@ -53,7 +54,7 @@ export class Job {
         this.statisticCounter = this.getStatisticCounterTimeout();
 
         return new Promise<Job>((resolve) => {
-            this.jobDescription.beforeProcessing(this.config, this.workspaceDirectory, () => {
+            this.jobDescription.beforeProcessing(this.jobContext, () => {
 
                 this.jobDescription.connections.forEach((connection) => {
                     let streamed = this.getReadStream(connection.from);
@@ -90,7 +91,7 @@ export class Job {
                 if (this.timeout) {
                     clearTimeout(this.timeout);
                 }
-                this.jobDescription.afterProcessing(this.config, this.workspaceDirectory, () => {
+                this.jobDescription.afterProcessing(this.jobContext, () => {
                     resolve(this);
                 });
             } else {
@@ -133,7 +134,7 @@ export class Job {
     private getWriteStream(name: string): Writable | null {
         const sinkNode = this.jobDescription.sinks[name];
         if (sinkNode) {
-            return this.jobDescription.sinks[name].get(this.config, this.workspaceDirectory);
+            return this.jobDescription.sinks[name].get(this.jobContext);
         }
         return null;
     }
@@ -141,13 +142,13 @@ export class Job {
     private getTransformStream(name: string): Transform | null {
         const transformNode = this.jobDescription.transformers[name];
         if (transformNode) {
-            return transformNode.get(this.config, this.workspaceDirectory);
+            return transformNode.get(this.jobContext);
         }
         return null;
     }
 
     private getReadStream(name: string): Readable {
-        return this.jobDescription.sources[name].get(this.config, this.workspaceDirectory);
+        return this.jobDescription.sources[name].get(this.jobContext);
 
     }
 

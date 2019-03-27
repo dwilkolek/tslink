@@ -82,6 +82,16 @@ export class DBQueries {
         });
     }
 
+    public findJob(id: string) {
+        return this.jobs.then((collection) => {
+            return new Promise<IJobDBO>((resolve) => {
+                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
+                    resolve(data as IJobDBO);
+                });
+            });
+        });
+    }
+
     public findJobDefinition(id: string): Promise<IJobDefinitionDBO> {
         return this.jobsDefinitions.then((collection) => {
             return new Promise<IJobDefinitionDBO>((resolve) => {

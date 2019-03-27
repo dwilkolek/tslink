@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
-import { IJobConfig } from './job-config';
+import { JobContext } from './job-context';
 
 export interface ISourceDescription {
-    get: (config: IJobConfig, workspace: string) => Readable;
+    get: (jobContext: JobContext) => Readable;
 }
