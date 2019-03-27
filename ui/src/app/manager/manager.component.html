@@ -24,7 +24,7 @@
             (input)="jobDefinitionName = $event.target.value">
         </div>
         <div class="form-group">
-          <button type="submit" class="btn btn-danger" (click)="uploadJobDefinition()">Upload Job</button>
+          <button type="button" class="btn btn-danger" (click)="uploadJobDefinition()">Upload Job</button>
         </div>
 
 
@@ -39,15 +39,15 @@
             accept=".json">
         </div>
         <div class="form-group">
-          <button type="submit" class="btn btn-danger" (click)="uploadJobConfig()">Upload Config</button>
+          <button type="button" class="btn btn-danger" (click)="uploadJobConfig()">Upload Config</button>
         </div>
       </form>
     </div>
   </div>
   <div class="row actions">
     <div class="col-12">
-      <button type="submit" class="btn btn-primary" (click)="startJob()">Run Job</button>
-      <button type="submit" class="btn btn-secondary" (click)="refreshAll()">Refresh Data in Manager</button>
+      <button type="button" class="btn btn-primary" (click)="startJob()">Run Job</button>
+      <button type="button" class="btn btn-secondary" (click)="refreshAll()">Refresh Data in Manager</button>
     </div>
   </div>
   <div class="row listings">

@@ -1,4 +1,7 @@
-import { Collection, Cursor, Db, FindOneAndUpdateOption, InsertOneWriteOpResult, MongoClient, ObjectID, UpdateWriteOpResult } from 'mongodb';
+import {
+    Collection, Cursor, Db, FindOneAndUpdateOption, InsertOneWriteOpResult,
+    MongoClient, ObjectID, UpdateWriteOpResult,
+} from 'mongodb';
 import { ConfigProvider } from './config-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';

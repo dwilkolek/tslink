@@ -78,7 +78,9 @@ export class MasterWorker extends EpDbWorker {
         }
 
         app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-            res.set('Content-Type', 'application/json');
+            if (req.url.indexOf('/api') === 0) {
+                res.set('Content-Type', 'application/json');
+            }
             next();
         });
 
@@ -158,12 +160,12 @@ export class MasterWorker extends EpDbWorker {
                         };
                         /* tslint:enable:no-unsafe-any */
                         this.db.storeJob(jobDBO, (result) => {
-                            res.json({id: result.insertedId});
+                            res.json({ id: result.insertedId });
                         });
                     });
                 });
             } else {
-                res.json({ });
+                res.json({});
             }
         });
 
@@ -191,7 +193,7 @@ export class MasterWorker extends EpDbWorker {
 
     public collect<T>(cursor: Cursor<T>, done: (data: T[]) => void) {
         const list: T[] = [];
-        cursor.forEach( (element: T) => {
+        cursor.forEach((element: T) => {
             list.push(element);
         }, () => {
             done(list);

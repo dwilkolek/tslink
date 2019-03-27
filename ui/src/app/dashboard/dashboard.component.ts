@@ -15,6 +15,10 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.refreshJobs();
+
+    setInterval(() => {
+      this.refreshJobs();
+    }, 10000);
   }
 
   refreshJobs() {
