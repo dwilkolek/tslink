@@ -10,8 +10,10 @@
       <th scope="col">Job Id</th>
       <th scope="col">Name</th>
       <th scope="col">Status</th>
+      <th scope="col">Progress</th>
       <th scope="col">Start Time</th>
       <th scope="col">End Time</th>
+      <th scope="col">Last offset</th>
 
     </tr>
   </thead>
@@ -28,10 +30,18 @@
         {{ job.status }}
       </td>
       <td>
+
+        <p *ngIf = "job.progress >= 0 && job.progress <= 100"><ngb-progressbar type="success" [value]="job.progress"></ngb-progressbar></p>
+        <p *ngIf = "job.progress == -1"><ngb-progressbar type="success" [value]="100" [striped]="true"></ngb-progressbar></p>
+      </td>
+      <td>
         {{ job.startDateTime | date:'medium'}}
       </td>
       <td>
         {{ job.endDateTime | date:'medium'}}
+      </td>
+      <td>
+        <pre>{{ job.offset ? (job.offset | json) : 'none'}}</pre>
       </td>
     </tr>
   </tbody>

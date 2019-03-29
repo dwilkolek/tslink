@@ -3,7 +3,7 @@ import * as express from 'express';
 import * as expressFileupload from 'express-fileupload';
 import * as fs from 'fs';
 import * as fstream from 'fstream';
-import { Cursor } from 'mongodb';
+import { Cursor, FilterQuery } from 'mongodb';
 import * as os from 'os';
 import * as path from 'path';
 import { Transform } from 'stream';
@@ -22,6 +22,7 @@ export class MasterWorker extends EpDbWorker {
     public app: express.Application;
 
     public runningJobs = 0;
+    public abandoneJobsCallback: NodeJS.Timeout;
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
@@ -38,6 +39,8 @@ export class MasterWorker extends EpDbWorker {
         '.svg',
     ];
 
+    private timeoutForLostJobs?: NodeJS.Timeout;
+
     constructor() {
         super();
         console.log('> Welcome to epjs >');
@@ -50,6 +53,8 @@ export class MasterWorker extends EpDbWorker {
         this.forkCores();
         this.app = this.initExpress();
         this.createDirectories();
+
+        this.abandoneJobsCallback = this.getTimeoutForLostJobs();
     }
     public forkCores() {
         const cpus = ConfigProvider.get().cpus || os.cpus().length;
@@ -57,6 +62,7 @@ export class MasterWorker extends EpDbWorker {
         for (let i = 0; i < cpus; i++) {
             cluster.fork();
         }
+
     }
 
     public createDirectories() {
@@ -156,6 +162,7 @@ export class MasterWorker extends EpDbWorker {
                         const jobDBO: IJobDBO = {
                             config: jobConfig,
                             jobDefinitionId: jobId,
+                            progress: -1,
                             status: JobStatusEnum.STORED,
                         };
                         /* tslint:enable:no-unsafe-any */
@@ -215,6 +222,92 @@ export class MasterWorker extends EpDbWorker {
                 throw err;
             }
         });
+    }
+
+    private getTimeoutForLostJobs() {
+        // {
+        //     $or:[
+        //        {
+        //           $and:[
+        //              {
+        //                 "config.recoverOnFail":true
+        //              },
+        //              {
+        //                 "status":"FAILED"
+        //              }
+        //           ]
+        //        },
+        //        {
+        //           "processId":123572
+        //        }
+        //     ]
+        //  }
+        const query: FilterQuery<IJobDBO> = {
+            $or: [
+                {
+                    $and:
+                        [
+                            {
+                                processId: {
+                                    $nin: Object.keys(cluster.workers).map((workerKey) => {
+
+                                        let pid = -1;
+                                        const worker = cluster.workers[workerKey];
+                                        if (worker != null) {
+                                            if (process.pid !== worker.process.pid) {
+                                                pid = worker.process.pid;
+                                            }
+                                        }
+                                        return pid;
+                                    }),
+                                },
+                            },
+                            {
+                                status: JobStatusEnum.PROCESSING,
+                            },
+                        ],
+                },
+                {
+                    $and:
+                        [
+                            { 'config.recoverOnFail': true },
+                            { status: JobStatusEnum.FAILED },
+                        ],
+                },
+            ],
+
+        };
+
+        return setTimeout(() => {
+            clearTimeout(this.abandoneJobsCallback);
+            this.db.findJobs(query).then((cursor) => {
+                cursor.forEach((jobdbo) => {
+                    jobdbo.processId = 0;
+                    jobdbo.status = JobStatusEnum.ABANDONED_BY_PROCESS;
+                    if (jobdbo.config != null && jobdbo.config.recoverOnFail === true) {
+                        const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
+                        delete jobCopy._id;
+                        jobCopy.status = JobStatusEnum.STORED;
+                        jobdbo.endDateTime = new Date();
+                        this.db.updateJob(jobdbo, (up) => {
+                            console.log(`moved to abandoned ${jobdbo._id}`);
+                            this.db.storeJob(jobCopy, () => {
+                                console.log(`restored job ${jobdbo._id}`);
+                            });
+                        });
+                    } else {
+                        jobdbo.endDateTime = new Date();
+                        this.db.updateJob(jobdbo, (up) => {
+                            console.log(`moved to abandoned ${jobdbo._id}`);
+                        });
+                    }
+
+                });
+            });
+
+            this.abandoneJobsCallback = this.getTimeoutForLostJobs();
+        }, 10000);
+
     }
 
 }

@@ -12,4 +12,5 @@ export interface IJobDefinition {
     sinks: { [key: string]: ISinkDescription };
     beforeProcessing: (jobContext: JobContext, done: () => void) => void;
     afterProcessing: (jobContext: JobContext, done: () => void) => void;
+    progress?: () => number;
 }

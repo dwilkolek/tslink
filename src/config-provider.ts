@@ -24,7 +24,7 @@ export class ConfigProvider {
 
     private constructor() {
         this.config = {
-            cpus: 4,
+            cpus: 8,
             db: {
                 name: 'epjs',
                 url: 'mongodb://localhost:27017',

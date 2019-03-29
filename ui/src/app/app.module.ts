@@ -27,7 +27,7 @@ registerLocaleData(defaultLocale, 'en');
     InOutCounterComponent,
     ManagerComponent,
     SidebarComponent,
-    DashboardComponent
+    DashboardComponent,
   ],
   imports: [
     BrowserModule,

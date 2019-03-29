@@ -4,4 +4,5 @@ export enum JobStatusEnum {
     FINISHED = 'FINISHED',
     STORED = 'STORED',
     PROCESSING = 'PROCESSING',
+    ABANDONED_BY_PROCESS = 'ABANDONED_BY_PROCESS',
 }

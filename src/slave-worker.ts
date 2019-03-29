@@ -33,46 +33,64 @@ export class SlaveWorker extends EpDbWorker {
                 };
                 Object.assign(config, job.config);
                 if (job._id) {
-                    this.runJob(job._id, job.jobDefinitionId, config);
+                    this.runJob(job, config);
                 }
             }
         });
     }
 
-    public runJob = (jobId: string, jobDefinitionId: string, config: IJobConfig) => {
-        const jobDefinitionDirectory = path.resolve(
-            `${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobDefinitionId}/`,
-        );
-        const workspaceDirectory = path.resolve(
-            `${FileProvider.getSystemPath(ConfigProvider.get().workspaceDirectory)}/${jobId}/`,
-        );
-        const jobContext = new JobContext(config, workspaceDirectory);
-        (async (self) => {
-            console.log('jobId', jobId, '; jobDefinitionDirectory: ', jobDefinitionDirectory, '; workspaceDirectory: ', workspaceDirectory);
+    public runJob = (iJobDbo: IJobDBO, config: IJobConfig) => {
+        if (iJobDbo._id != null && iJobDbo.jobDefinitionId) {
+            const jobDefinitionId = iJobDbo.jobDefinitionId;
+            const jobId = iJobDbo._id;
+            const jobDefinitionDirectory = path.resolve(
+                `${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobDefinitionId}/`,
+            );
+            const workspaceDirectory = path.resolve(
+                `${FileProvider.getSystemPath(ConfigProvider.get().workspaceDirectory)}/${jobId}/`,
+            );
 
-            FileProvider.createDirectory(workspaceDirectory);
-            const jobfilename: string = path.join(jobDefinitionDirectory, config.entryFile);
-            /* tslint:disable:no-unsafe-any */
-            const fns = await import(jobfilename);
+            const jobContext = new JobContext(
+                config,
+                workspaceDirectory,
+                (offset, callback: (stored: boolean) => void) => {
+                    this.db.updateJob({ _id: jobId, offset }, (updateResult) => {
+                        callback(updateResult != null && updateResult.modifiedCount != null && updateResult.modifiedCount === 1);
+                    });
+                },
+                iJobDbo.offset,
+            );
 
-            if (fns.beforeCreate) {
-                fns.beforeCreate(jobContext, () => {
+            (async (self) => {
+                console.log('jobId', jobId, '; jobDefinitionDirectory: ',
+                    jobDefinitionDirectory, '; workspaceDirectory: ', workspaceDirectory);
+
+                FileProvider.createDirectory(workspaceDirectory);
+                const jobfilename: string = path.join(jobDefinitionDirectory, config.entryFile);
+                /* tslint:disable:no-unsafe-any */
+                const fns = await import(jobfilename);
+
+                if (fns.beforeCreate) {
+                    fns.beforeCreate(jobContext, () => {
+                        this.spawnJob(jobId, fns, jobContext, jobDefinitionId);
+                    });
+                } else {
                     this.spawnJob(jobId, fns, jobContext, jobDefinitionId);
-                });
-            } else {
-                this.spawnJob(jobId, fns, jobContext, jobDefinitionId);
-            }
-            /* tslint:enable:no-unsafe-any */
+                }
+                /* tslint:enable:no-unsafe-any */
 
-        })(this).catch((e) => {
-            console.log('Update to FAILED_TO_START', jobId, e);
-            this.updateError(jobId, JobStatusEnum.FAILED_TO_START, jobContext, jobDefinitionId, e);
-        });
+            })(this).catch((e) => {
+                console.log('Update to FAILED_TO_START', jobId, e);
+                this.updateError(jobId, JobStatusEnum.FAILED_TO_START, jobContext, jobDefinitionId, e);
+            });
+        }
     }
 
     public spawnJob(jobId: string, mod: any, jobContext: JobContext, jobDefinitionId: string) {
         // tslint:disable-next-line:no-unsafe-any
-        const job = new Job(this.db, jobId, mod.default(jobContext), jobContext);
+        const jobDefinition = mod.default(jobContext);
+        // tslint:disable-next-line:no-unsafe-any
+        const job = new Job(this.db, jobId, jobDefinition, jobContext);
         this.jobs.push(job);
         job.run()
             .then((jobResolve: Job) => {
@@ -94,18 +112,23 @@ export class SlaveWorker extends EpDbWorker {
             })
             .catch((e) => {
                 console.log('Update to FAILED', jobId, e);
-                this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, e);
+
+                this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, e, job,
+                    // tslint:disable-next-line:no-unsafe-any
+                    jobDefinition.progress ? jobDefinition.progress() : 0);
             });
     }
 
     public updateError(jobId: string, status: JobStatusEnum, jobContext: JobContext,
-                       jobDefinitionId: string, error: any, jobResolved?: Job) {
+                       jobDefinitionId: string, error: any, jobResolved?: Job, progress?: number) {
         const up: IJobDBO = {
             _id: jobId,
             config: jobContext.jobConfig,
             endDateTime: new Date(),
             error,
             jobDefinitionId,
+            processId: 0,
+            progress,
             statistics: jobResolved && jobResolved.counterStore.json() || null,
             status,
         };
@@ -124,6 +147,8 @@ export class SlaveWorker extends EpDbWorker {
             config: jobContext.jobConfig,
             endDateTime: new Date(),
             jobDefinitionId,
+            processId: 0,
+            progress: 100,
             statistics: jobResolved.counterStore.json(),
             status: JobStatusEnum.FINISHED,
         }, () => {
