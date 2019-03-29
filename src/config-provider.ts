@@ -24,13 +24,13 @@ export class ConfigProvider {
 
     private constructor() {
         this.config = {
-            cpus: 4,
+            cpus: 8,
             db: {
                 name: 'epjs',
                 url: 'mongodb://localhost:27017',
             },
             jobsDirectory: './jobs',
-            limitJobsPerWorker: 100,
+            limitJobsPerWorker: 1,
             tempZipDirectory: './zips',
             workspaceDirectory: './workspace',
         };
