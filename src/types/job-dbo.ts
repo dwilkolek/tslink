@@ -14,4 +14,5 @@ export interface IJobDBO {
     processId?: number;
     offset?: any;
     previousJob_id?: string;
+    name?: string;
 }

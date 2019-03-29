@@ -81,6 +81,7 @@ export class SlaveWorker extends EpDbWorker {
 
             })(this).catch((e) => {
                 console.log('Update to FAILED_TO_START', jobId, e);
+                this.deleteJobFromList(jobId);
                 this.updateError(jobId, JobStatusEnum.FAILED_TO_START, jobContext, jobDefinitionId, e);
             });
         }
@@ -94,13 +95,7 @@ export class SlaveWorker extends EpDbWorker {
         this.jobs.push(job);
         job.run()
             .then((jobResolve: Job) => {
-                let index = -1;
-                this.jobs.forEach((j, i) => {
-                    if (jobResolve._id === j._id) {
-                        index = i;
-                    }
-                });
-                this.jobs.splice(index, 1);
+                this.deleteJobFromList(jobResolve._id);
                 this.updateFinished(jobId, jobContext, jobDefinitionId, jobResolve);
                 // tslint:disable-next-line:no-unsafe-any
                 if (mod.afterDestroy) {
@@ -112,7 +107,7 @@ export class SlaveWorker extends EpDbWorker {
             })
             .catch((e) => {
                 console.log('Update to FAILED', jobId, e);
-
+                this.deleteJobFromList(jobId);
                 this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, e, job,
                     // tslint:disable-next-line:no-unsafe-any
                     jobDefinition.progress ? jobDefinition.progress() : 0);
@@ -160,4 +155,17 @@ export class SlaveWorker extends EpDbWorker {
         });
     }
 
+    private deleteJobFromList(job_id: string) {
+        let index = -1;
+        this.jobs.forEach((j, i) => {
+            if (job_id === j._id) {
+                index = i;
+            }
+        });
+        if (index !== -1) {
+            this.jobs.splice(index, 1);
+        } else {
+            console.error('Failed to remove job from process ', job_id);
+        }
+    }
 }

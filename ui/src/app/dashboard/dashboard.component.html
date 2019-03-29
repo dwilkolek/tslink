@@ -6,43 +6,46 @@
 <table class="table table-striped">
   <thead>
     <tr>
-      <th scope="col">#</th>
-      <th scope="col">Job Id</th>
+      <!-- <th scope="col">#</th> -->
+      <!-- <th scope="col">Job Id</th> -->
       <th scope="col">Name</th>
       <th scope="col">Status</th>
-      <th scope="col">Progress</th>
-      <th scope="col">Start Time</th>
-      <th scope="col">End Time</th>
+      <!-- <th scope="col">Progress</th> -->
+      <th scope="col">Start/End Time</th>
+      <!-- <th scope="col">End Time</th> -->
       <th scope="col">Last offset</th>
 
     </tr>
   </thead>
   <tbody>
     <tr *ngFor="let job of jobs; index as i" (click)="goToJob(job)">
-      <th scope="row">{{ i + 1 }}</th>
-      <td>
+      <!-- <th scope="row">{{ i + 1 }}</th> -->
+      <!-- <td>
         {{ job._id }}
+      </td> -->
+      <td>
+        {{ job.name }} <br /><span class="element-id">{{ job._id }}</span>
       </td>
       <td>
-        {{ job.name }}
+        {{ job.status }}<br />
+        <p *ngIf="job.progress >= 0 && job.progress <= 100">
+          <ngb-progressbar type="success" [value]="job.progress"></ngb-progressbar>
+        </p>
+        <p *ngIf="job.progress == -1">
+          <ngb-progressbar type="success" [value]="100" [striped]="true"></ngb-progressbar>
+        </p>
       </td>
       <td>
-        {{ job.status }}
+        Start: {{ job.startDateTime | date:'medium'}} <br />
+        End: {{ job.endDateTime | date:'medium'}}
       </td>
-      <td>
-
-        <p *ngIf = "job.progress >= 0 && job.progress <= 100"><ngb-progressbar type="success" [value]="job.progress"></ngb-progressbar></p>
-        <p *ngIf = "job.progress == -1"><ngb-progressbar type="success" [value]="100" [striped]="true"></ngb-progressbar></p>
-      </td>
-      <td>
-        {{ job.startDateTime | date:'medium'}}
-      </td>
-      <td>
-        {{ job.endDateTime | date:'medium'}}
-      </td>
+    
       <td>
         <pre>{{ job.offset ? (job.offset | json) : 'none'}}</pre>
       </td>
+      <!-- <td>
+        <pre>{{job | json}}</pre>
+      </td> -->
     </tr>
   </tbody>
 </table>

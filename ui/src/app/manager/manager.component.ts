@@ -28,15 +28,17 @@ export class ManagerComponent {
 
   jobDefinitionName: string = '';
 
+  jobName: string = '';
+
   startJob() {
-    if (this.selectedJobDefinition && this.selectedJobConfig) {
-      this.backend.startJob(this.selectedJobDefinition, this.selectedJobConfig).subscribe((res: any) => {
+    if (this.selectedJobDefinition && this.selectedJobConfig && (this.jobName || '').length > 3) {
+      this.backend.startJob(this.selectedJobDefinition, this.selectedJobConfig, this.jobName).subscribe((res: any) => {
         this.selectedJobConfig = null;
         this.selectedJobDefinition = null;
         alert('Job stored for execution.');
       });
     } else {
-      alert('Select job & config.');
+      alert('Input name and select job & config ');
     }
   }
 
