@@ -30,7 +30,7 @@ export class ConfigProvider {
                 url: 'mongodb://localhost:27017',
             },
             jobsDirectory: './jobs',
-            limitJobsPerWorker: 1,
+            limitJobsPerWorker: 100,
             tempZipDirectory: './zips',
             workspaceDirectory: './workspace',
         };

@@ -30,8 +30,10 @@ export class CounterStore {
     public collectCounterIn(name: string) {
         const transformStream = new Stream.Transform();
         transformStream._transform = (chunk: Buffer, encoding: string, done) => {
-            this.putIn(name, chunk);
-            done(null, chunk);
+             setImmediate(() => {
+                this.putIn(name, chunk);
+                done(null, chunk);
+             });
         };
         return transformStream;
     }
@@ -39,8 +41,10 @@ export class CounterStore {
     public collectCounterOut(name: string) {
         const transformStream = new Stream.Transform();
         transformStream._transform = (chunk: Buffer, encoding: string, done) => {
-            this.putOut(name, chunk);
-            done(null, chunk);
+             setImmediate(() => {
+                this.putOut(name, chunk);
+                done(null, chunk);
+             });
         };
         return transformStream;
     }

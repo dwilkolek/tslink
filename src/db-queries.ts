@@ -1,7 +1,8 @@
 import {
-    Collection, Cursor, Db, FindOneAndUpdateOption, InsertOneWriteOpResult,
-    MongoClient, ObjectID, UpdateWriteOpResult,
+    Collection, Cursor, Db, FilterQuery, FindOneAndUpdateOption,
+    InsertOneWriteOpResult, MongoClient, ObjectID, UpdateWriteOpResult,
 } from 'mongodb';
+import * as process from 'process';
 import { ConfigProvider } from './config-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
@@ -28,10 +29,18 @@ export class DBQueries {
         });
     }
 
-    public findJobs(): Promise<Cursor<IJobConfig>> {
+    // public findJobs(): Promise<Cursor<IJobDBO>> {
+    //     return this.jobs.then((collection) => {
+    //         return new Promise<Cursor<IJobDBO>>((resolve) => {
+    //             resolve(collection.find({}, {}));
+    //         });
+    //     });
+    // }
+
+    public findJobs(query: FilterQuery<IJobDBO> = {}): Promise<Cursor<IJobDBO>> {
         return this.jobs.then((collection) => {
-            return new Promise<Cursor<IJobConfig>>((resolve) => {
-                resolve(collection.find({}, {}));
+            return new Promise<Cursor<IJobDBO>>((resolve) => {
+                resolve(collection.find(query, {}));
             });
         });
     }
@@ -77,7 +86,7 @@ export class DBQueries {
                 collection.findOneAndUpdate({ status },
                     {
                         $set:
-                            { status: JobStatusEnum.PROCESSING, startDateTime: new Date() },
+                            { status: JobStatusEnum.PROCESSING, startDateTime: new Date(), processId: process.pid },
                     }, options).then((data) => {
                         resolve(data.value);
                     });
@@ -85,7 +94,7 @@ export class DBQueries {
         });
     }
 
-    public findJob(id: string) {
+    public async findJob(id: string) {
         return this.jobs.then((collection) => {
             return new Promise<IJobDBO>((resolve) => {
                 collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {

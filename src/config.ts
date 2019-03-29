@@ -8,5 +8,5 @@ export interface IConfig {
     jobsDirectory: './jobs';
     tempZipDirectory: './zips';
     workspaceDirectory: './workspace';
-    limitJobsPerWorker: 1;
+    limitJobsPerWorker: number;
 }

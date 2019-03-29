@@ -10,4 +10,8 @@ export interface IJobDBO {
     endDateTime?: Date;
     statistics?: any;
     error?: any;
+    progress?: number;
+    processId?: number;
+    offset?: any;
+    previousJob_id?: string;
 }

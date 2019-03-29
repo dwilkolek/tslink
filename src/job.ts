@@ -6,6 +6,7 @@ import { DBQueries } from './db-queries';
 import { IConnectionNext } from './types/connection-next';
 import { IJobConfig } from './types/job-config';
 import { JobContext } from './types/job-context';
+import { IJobDBO } from './types/job-dbo';
 import { IJobDefinition } from './types/job-definition';
 
 export class Job {
@@ -38,6 +39,7 @@ export class Job {
                 private jobContext: JobContext) {
         console.log('Working on:', process.pid, jobDescription, jobContext);
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
+
         this.sourceNames.forEach((source) => {
             this._counterStore.init(source);
         });
@@ -74,14 +76,15 @@ export class Job {
         return setTimeout(() => {
             this.db.updateJob({
                 _id: this._id,
+                progress: this.jobDescription.progress ? this.jobDescription.progress() : -1,
                 statistics: this.counterStore.json(),
             }, () => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
             });
-        }, 20000);
+        }, 10000);
     }
 
-    private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void ) {
+    private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void) {
         return setTimeout(() => {
             if (this.workingEndPipes === 0) {
                 console.log('Finishin job:', this._id);
