@@ -41,7 +41,7 @@ export class Job {
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
 
         this.sourceNames.forEach((source) => {
-            this._counterStore.init(source);
+            this.counterStore.init(source);
         });
         this.transformerNames.forEach((transform) => {
             this.counterStore.init(transform);
@@ -54,14 +54,14 @@ export class Job {
     public run() {
 
         this.statisticCounter = this.getStatisticCounterTimeout();
-
+        console.log('JOB CONFIG: ', this.jobContext.jobConfig);
         return new Promise<Job>((resolve) => {
             this.jobDescription.beforeProcessing(this.jobContext, () => {
 
                 this.jobDescription.connections.forEach((connection) => {
                     let streamed = this.getReadStream(connection.from);
                     this.streams[connection.from] = streamed;
-                    const readerOutStream = this.counterStore.collectCounterOut(connection.from);
+                    const readerOutStream = this.counterStore.collectCounterOut(connection.from, this.jobContext.jobConfig.objectMode);
                     streamed = streamed.pipe(readerOutStream);
                     const connectionNext = this.pipeNext(streamed, connection.to);
                     this.pipelines.push(connectionNext);
@@ -108,14 +108,14 @@ export class Job {
             const transform = this.getTransformStream(connectionNext.name);
             const write = this.getWriteStream(connectionNext.name);
 
-            const inStream = this.counterStore.collectCounterIn(connectionNext.name);
+            const inStream = this.counterStore.collectCounterIn(connectionNext.name, this.jobContext.jobConfig.objectMode);
 
             let streamNext: Stream = stream
                 .pipe(inStream);
 
             if (transform) {
                 streamNext = streamNext.pipe(transform);
-                const outStream = this.counterStore.collectCounterOut(connectionNext.name);
+                const outStream = this.counterStore.collectCounterOut(connectionNext.name, this.jobContext.jobConfig.objectMode);
                 streamNext = streamNext.pipe(outStream);
             }
             if (!transform && write) {

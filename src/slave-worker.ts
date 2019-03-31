@@ -29,6 +29,7 @@ export class SlaveWorker extends EpDbWorker {
                     deleteWorkspaceOnFinish: false,
                     entryFile: 'index.js',
                     name: 'default',
+                    objectMode: true,
                     recoverOnFail: false,
                 };
                 Object.assign(config, job.config);

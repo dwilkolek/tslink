@@ -27,24 +27,41 @@ export class CounterStore {
         this.counters[name].putTime(time);
     }
 
-    public collectCounterIn(name: string) {
-        const transformStream = new Stream.Transform();
-        transformStream._transform = (chunk: Buffer, encoding: string, done) => {
-             setImmediate(() => {
-                this.putIn(name, chunk);
+    public collectCounterIn(name: string, objectMode: boolean) {
+        const transformStream = new Stream.Transform({objectMode});
+        transformStream._transform = (chunk: any, encoding: string, done) => {
+            setImmediate(() => {
+                if (typeof chunk === 'object') {
+                    this.putIn(name, Buffer.from(JSON.stringify(chunk)));
+                } else if (typeof chunk === 'string') {
+                    this.putIn(name, Buffer.from(chunk));
+                } else if (chunk instanceof Buffer) {
+                    this.putIn(name, Buffer.from(chunk));
+                } else {
+                    console.warn('Cannot process in counter', name, chunk);
+                }
+
                 done(null, chunk);
-             });
+            });
         };
         return transformStream;
     }
 
-    public collectCounterOut(name: string) {
-        const transformStream = new Stream.Transform();
-        transformStream._transform = (chunk: Buffer, encoding: string, done) => {
-             setImmediate(() => {
-                this.putOut(name, chunk);
+    public collectCounterOut(name: string, objectMode: boolean) {
+        const transformStream = new Stream.Transform({objectMode});
+        transformStream._transform = (chunk: any, encoding: string, done) => {
+            setImmediate(() => {
+                if (typeof chunk === 'object') {
+                    this.putOut(name, Buffer.from(JSON.stringify(chunk)));
+                } else if (typeof chunk === 'string') {
+                    this.putOut(name, Buffer.from(chunk));
+                } else if (chunk instanceof Buffer) {
+                    this.putOut(name, Buffer.from(chunk));
+                } else {
+                    console.warn('Cannot process out counter', name, chunk);
+                }
                 done(null, chunk);
-             });
+            });
         };
         return transformStream;
     }

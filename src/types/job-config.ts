@@ -6,4 +6,5 @@ export interface IJobConfig {
     deleteWorkspaceOnError: boolean;
     recoverOnFail: boolean;
     entryFile: string;
+    objectMode: boolean;
 }
