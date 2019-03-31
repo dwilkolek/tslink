@@ -4,9 +4,7 @@ import { Readable } from 'stream';
 import { CounterStore } from './counter-store';
 import { DBQueries } from './db-queries';
 import { IConnectionNext } from './types/connection-next';
-import { IJobConfig } from './types/job-config';
 import { JobContext } from './types/job-context';
-import { IJobDBO } from './types/job-dbo';
 import { IJobDefinition } from './types/job-definition';
 
 export class Job {
@@ -63,8 +61,13 @@ export class Job {
                     this.streams[connection.from] = streamed;
                     const readerOutStream = this.counterStore.collectCounterOut(connection.from, this.jobContext.jobConfig.objectMode);
                     streamed = streamed.pipe(readerOutStream);
-                    const connectionNext = this.pipeNext(streamed, connection.to);
-                    this.pipelines.push(connectionNext);
+                    connection.to.forEach((connTo) => {
+                        const connectionNext = this.pipeNext(streamed, connTo);
+                        connectionNext.forEach((_conn) => {
+                            this.pipelines.push(_conn);
+                        });
+                    });
+
                 });
 
                 this.timeout = this.getTimeoutIsDone(resolve);
@@ -103,7 +106,7 @@ export class Job {
 
         }, 5000);
     }
-    private pipeNext(stream: Stream, connectionNext: IConnectionNext): Stream {
+    private pipeNext(stream: Stream, connectionNext: IConnectionNext): Stream[] {
         if (connectionNext) {
             const transform = this.getTransformStream(connectionNext.name);
             const write = this.getWriteStream(connectionNext.name);
@@ -127,11 +130,17 @@ export class Job {
             }
 
             if (connectionNext.to) {
-                return this.pipeNext(streamNext, connectionNext.to);
+                const nextStreams: Stream[] = [];
+                connectionNext.to.forEach((connNextTo) => {
+                    this.pipeNext(streamNext, connNextTo).forEach((subStream) => {
+                        nextStreams.push(subStream);
+                    });
+                });
+                return nextStreams;
             }
-            return streamNext;
+            return [streamNext];
         }
-        return stream;
+        return [stream];
     }
 
     private getWriteStream(name: string): Writable | null {
