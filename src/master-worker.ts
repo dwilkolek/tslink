@@ -154,14 +154,16 @@ export class MasterWorker extends EpDbWorker {
 
         app.post('/api/job/start', (req: express.Request, res: express.Response) => {
             /* tslint:disable:no-unsafe-any */
-            if (req.query.jobId != null && req.query.configId != null) {
+            if (req.query.jobId != null && req.query.configId != null && req.query.name != null) {
                 const jobId = req.query.jobId;
                 const configId = req.query.configId;
+                const name = req.query.name;
                 this.db.findJobDefinition(jobId).then((jobDefinition) => {
                     this.db.findJobConfig(configId).then((jobConfig) => {
                         const jobDBO: IJobDBO = {
                             config: jobConfig,
                             jobDefinitionId: jobId,
+                            name,
                             progress: -1,
                             status: JobStatusEnum.STORED,
                         };
@@ -225,23 +227,6 @@ export class MasterWorker extends EpDbWorker {
     }
 
     private getTimeoutForLostJobs() {
-        // {
-        //     $or:[
-        //        {
-        //           $and:[
-        //              {
-        //                 "config.recoverOnFail":true
-        //              },
-        //              {
-        //                 "status":"FAILED"
-        //              }
-        //           ]
-        //        },
-        //        {
-        //           "processId":123572
-        //        }
-        //     ]
-        //  }
         const query: FilterQuery<IJobDBO> = {
             $or: [
                 {

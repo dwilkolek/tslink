@@ -55,10 +55,11 @@ export class BackendService {
     const req = new HttpRequest('POST', `${environment.apiUrl}job-config`, formData, options);
     return this.http.request(req);
   }
-  startJob(jobId: string, configId: string) {
+  startJob(jobId: string, configId: string, jobName: string) {
     let params = new HttpParams();
     params = params.set('jobId', jobId);
     params = params.set('configId', configId);
+    params = params.set('name', jobName);
     const options = {
       params: params,
     };
