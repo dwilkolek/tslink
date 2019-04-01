@@ -124,9 +124,13 @@ export class Job {
             if (!transform && write) {
                 streamNext = streamNext.pipe(write);
                 this.workingEndPipes++;
-                write.on('close', () => {
+                // write.on('close', () => {
+                //     this.workingEndPipes--;
+                // });
+                write.on('finish', () => {
                     this.workingEndPipes--;
                 });
+
             }
 
             if (connectionNext.to) {
