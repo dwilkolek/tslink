@@ -273,11 +273,12 @@ export class MasterWorker extends EpDbWorker {
                         const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
                         delete jobCopy._id;
                         jobCopy.status = JobStatusEnum.STORED;
+                        jobCopy.previousJob_id = jobdbo._id;
                         jobdbo.endDateTime = new Date();
                         this.db.updateJob(jobdbo, (up) => {
-                            console.log(`moved to abandoned ${jobdbo._id}`);
+                            console.log(`moved to abandoned ${jobdbo._id} and restore later`);
                             this.db.storeJob(jobCopy, () => {
-                                console.log(`restored job ${jobdbo._id}`);
+                                console.log(`restored job ${jobdbo._id} -> ${jobCopy._id}`);
                             });
                         });
                     } else {

@@ -1,13 +1,71 @@
-<div class="nested" *ngIf="job">
-  <h3>
-      Job name: {{job.name}} [ {{job._id}} ] - {{job.status}}
-  </h3>
+<ng-template [ngIf]="job">
+  <h4>
+    Job: {{job.name}} <span class="element-id">{{job._id}}</span>
+  </h4>
 
-  <ng-template [ngIf]="job.statistics && job.statistics.processes">
-      <app-stats *ngFor="let process of job.statistics.processes" [process]="process"></app-stats>
+  <span class="job-spans">
+    <b>Status:</b> {{ job.status }}
+  </span>
+  <span class="job-spans">
+    <b>Start:</b> {{ job.startDateTime | date:'medium'}}
+  </span>
+  <span class="job-spans">
+    <b>End</b>: {{ job.endDateTime | date:'medium'}}
+  </span>
+  <span *ngIf="job.previousJob_id" class="job-spans">
+    <a [href]="'/job/' + job.previousJob_id">Previous job</a>
+  </span>
+  <br />
+  <p *ngIf="job.progress >= 0 && job.progress <= 100">
+    <ngb-progressbar type="success" [value]="job.progress"></ngb-progressbar>
+  </p>
+  <p *ngIf="job.progress == -1">
+    <ngb-progressbar type="success" [value]="100" [striped]="true"></ngb-progressbar>
+  </p>
+
+
+  <ng-template [ngIf]="links && nodes">
+    <div class="chart">
+      <ngx-graph class="chart-container" [view]="view" [legend]="showLegend" [links]="links" [nodes]="nodes"
+        [scheme]="colorScheme" [orientation]="'LR'" [curve]="curve" (select)="select($event)" [autoZoom]="autoZoom"
+        [enableZoom]="enableZoom" [autoCenter]="autoCenter" [draggingEnabled]="draggingEnabled">
+        <!-- (legendLabelClick)="onLegendLabelClick($event)" -->
+        <!-- (select)="select($event)" -->
+        <ng-template #defsTemplate>
+          <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
+            <svg:path d="M0,-5L10,0L0,5" class="arrow-head" />
+          </svg:marker>
+        </ng-template>
+
+        <ng-template #nodeTemplate let-node>
+          <svg:g class="node events-enabled">
+            <svg:rect [attr.width]="node.width" [attr.height]="node.height" [attr.fill]="node.options.color" />
+            <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.name}}</svg:text>
+          </svg:g>
+        </ng-template>
+
+        <ng-template #linkTemplate let-link>
+          <svg:g class="edge">
+            <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
+            </svg:path>
+          </svg:g>
+        </ng-template>
+
+      </ngx-graph>
+    </div>
+    <app-stats *ngIf="process" [process]="process"></app-stats>
+
+
   </ng-template>
-  
-</div>
-<hr />
-
-<pre>{{job | json}}</pre>
+  <form>
+    <div class="form-group">
+      <button type="button" class="btn btn-danger" (click)="toggle()">Debug</button>
+    </div>
+    <div class="debug" [class.hidden]="hidden">
+      <pre>{{job | json}}</pre>
+    </div>
+  </form>
+</ng-template>
+<ng-template [ngIf]="!job">
+  <h2 class="loading">Loading...</h2>
+</ng-template>
