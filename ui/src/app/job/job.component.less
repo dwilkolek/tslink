@@ -5,3 +5,63 @@
 h3 {
     margin: 5px 0;
 }
+
+.debug {
+    padding: 20px;
+}
+
+form {
+    margin: 20px 0;
+}
+
+.graph {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    .edge {
+        stroke: #666;
+        fill: none;
+
+        .edge-label {
+            stroke: none;
+            font-size: 12px;
+            fill: #666;
+        }
+    }
+
+    .panning-rect {
+        fill: transparent;
+        cursor: move;
+    }
+
+    .node-group {
+        .node:focus {
+            outline: none;
+        }
+    }
+
+    path {
+        stroke: #666 !important;
+    }
+}
+
+.chart {
+    height: 500px;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+}
+
+ngx-graph {
+    pointer-events: none;
+}
+
+
+.events-enabled {
+    pointer-events: all;
+}
+
+.job-spans {
+    margin-right: 40px;
+}
