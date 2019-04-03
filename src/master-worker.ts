@@ -1,4 +1,5 @@
 import * as cluster from 'cluster';
+import { resolve } from 'dns';
 import * as express from 'express';
 import * as expressFileupload from 'express-fileupload';
 import * as fs from 'fs';
@@ -22,7 +23,8 @@ export class MasterWorker extends EpDbWorker {
     public app: express.Application;
 
     public runningJobs = 0;
-    public abandoneJobsCallback: NodeJS.Timeout;
+    public timeoutAbandonedJobs?: NodeJS.Timeout;
+    public timeoutToUpdateOffsetsInDb?: NodeJS.Timeout;
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
@@ -39,8 +41,6 @@ export class MasterWorker extends EpDbWorker {
         '.svg',
     ];
 
-    private timeoutForLostJobs?: NodeJS.Timeout;
-
     constructor() {
         super();
         console.log('> Welcome to epjs >');
@@ -54,7 +54,7 @@ export class MasterWorker extends EpDbWorker {
         this.app = this.initExpress();
         this.createDirectories();
 
-        this.abandoneJobsCallback = this.getTimeoutForLostJobs();
+        this.getTimeoutStoreOffsetToDb(true);
     }
     public forkCores() {
         const cpus = ConfigProvider.get().cpus || os.cpus().length;
@@ -225,6 +225,89 @@ export class MasterWorker extends EpDbWorker {
             }
         });
     }
+    // TODO: Refactor this ugly fuck below.....
+    private getTimeoutStoreOffsetToDb(init = false) {
+        const query: FilterQuery<IJobDBO> = {
+            status: {
+                $in: [JobStatusEnum.PROCESSING, JobStatusEnum.FAILED, JobStatusEnum.FINISHED, JobStatusEnum.ABANDONED_BY_PROCESS],
+            },
+        };
+        if (this.timeoutToUpdateOffsetsInDb != null) {
+            clearTimeout(this.timeoutToUpdateOffsetsInDb);
+        }
+        return setTimeout(() => {
+            const promisses: Array<Promise<number>> = [];
+            this.db.findJobs(query).then((cursor) => {
+                cursor.forEach((jobdbo) => {
+                    if (jobdbo._id) {
+                        this.redis.get().get(jobdbo._id).then((value) => {
+                            console.log('redisValue', value);
+                            if (jobdbo.status != null) {
+                                const updateJobObj = {
+                                    _id: jobdbo._id, offset: value != null ? JSON.parse(value) : null, status: jobdbo.status,
+                                };
+                                if (JobStatusEnum.FINISHED === jobdbo.status) {
+                                    updateJobObj.status = JobStatusEnum.FINISHED_SYNCHRONIZED;
+                                }
+                                if (JobStatusEnum.ABANDONED_BY_PROCESS === jobdbo.status) {
+                                    updateJobObj.status = JobStatusEnum.ABANDONED_BY_PROCESS_SYNCHRONIZED;
+                                }
+                                if (JobStatusEnum.FAILED === jobdbo.status) {
+                                    updateJobObj.status = JobStatusEnum.FAILED_SYNCHRONIZED;
+                                }
+                                let pushedPromise = false;
+                                console.log('updateJobObj', updateJobObj);
+                                this.db.updateJob(updateJobObj, () => {
+                                    console.log(jobdbo.status);
+
+                                    if (jobdbo.status != null) {
+                                        const deleteKeysStatus = [
+                                            JobStatusEnum.FINISHED, JobStatusEnum.ABANDONED_BY_PROCESS, JobStatusEnum.FAILED,
+                                        ];
+                                        if (deleteKeysStatus.indexOf(jobdbo.status) > -1) {
+                                            if (jobdbo._id) {
+                                                pushedPromise = true;
+                                                promisses.push(this.redis.get().del(jobdbo._id));
+                                            }
+                                        }
+                                    }
+
+                                    if (!pushedPromise) {
+                                        promisses.push(new Promise((noopResolve) => {
+                                            noopResolve(1);
+                                        }));
+                                    }
+                                });
+                                if (!pushedPromise) {
+                                    promisses.push(new Promise((noopResolve) => {
+                                        noopResolve(1);
+                                    }));
+                                }
+                            }
+
+                        });
+                    }
+                });
+            });
+
+            setTimeout(() => {
+                if (promisses.length > 0) {
+                    if (init) {
+                        this.timeoutAbandonedJobs = this.getTimeoutForLostJobs();
+                    }
+                    this.timeoutToUpdateOffsetsInDb = this.getTimeoutStoreOffsetToDb();
+                } else {
+                    Promise.all(promisses).then(() => {
+                        if (init) {
+                            this.timeoutAbandonedJobs = this.getTimeoutForLostJobs();
+                        }
+                        this.timeoutToUpdateOffsetsInDb = this.getTimeoutStoreOffsetToDb();
+                    });
+                }
+            }, 10000);
+        }, 10000);
+
+    }
 
     private getTimeoutForLostJobs() {
         const query: FilterQuery<IJobDBO> = {
@@ -256,7 +339,7 @@ export class MasterWorker extends EpDbWorker {
                     $and:
                         [
                             { 'config.recoverOnFail': true },
-                            { status: JobStatusEnum.FAILED },
+                            { status: { $in: [JobStatusEnum.FAILED_SYNCHRONIZED, JobStatusEnum.ABANDONED_BY_PROCESS_SYNCHRONIZED] } },
                         ],
                 },
             ],
@@ -264,33 +347,44 @@ export class MasterWorker extends EpDbWorker {
         };
 
         return setTimeout(() => {
-            clearTimeout(this.abandoneJobsCallback);
+            if (this.timeoutAbandonedJobs != null) {
+                clearTimeout(this.timeoutAbandonedJobs);
+            }
             this.db.findJobs(query).then((cursor) => {
                 cursor.forEach((jobdbo) => {
                     jobdbo.processId = 0;
-                    jobdbo.status = JobStatusEnum.ABANDONED_BY_PROCESS;
-                    if (jobdbo.config != null && jobdbo.config.recoverOnFail === true) {
+                    let restore = false;
+                    if (jobdbo.status === JobStatusEnum.FAILED_SYNCHRONIZED) {
+                        restore = true;
+                        jobdbo.status = JobStatusEnum.FAILED_SYNCHRONIZED_RESTORED;
+                    } else if (jobdbo.status === JobStatusEnum.ABANDONED_BY_PROCESS_SYNCHRONIZED) {
+                        restore = true;
+                        jobdbo.status = JobStatusEnum.ABANDONED_BY_PROCESS_SYNCHRONIZED_RESTORED;
+                    } else {
+                        jobdbo.status = JobStatusEnum.ABANDONED_BY_PROCESS;
+                    }
+                    if (jobdbo.config != null && jobdbo.config.recoverOnFail === true && restore) {
                         const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
                         delete jobCopy._id;
                         jobCopy.status = JobStatusEnum.STORED;
                         jobdbo.endDateTime = new Date();
                         this.db.updateJob(jobdbo, (up) => {
-                            console.log(`moved to abandoned ${jobdbo._id}`);
+                            console.log(`moved to abandoned ${jobdbo._id}, ${jobdbo.status}`);
                             this.db.storeJob(jobCopy, () => {
-                                console.log(`restored job ${jobdbo._id}`);
+                                console.log(`restored job ${jobdbo._id}, ${jobdbo.status}`);
                             });
                         });
                     } else {
                         jobdbo.endDateTime = new Date();
                         this.db.updateJob(jobdbo, (up) => {
-                            console.log(`moved to abandoned ${jobdbo._id}`);
+                            console.log(`moved to abandoned ${jobdbo._id}, ${jobdbo.status}`);
                         });
                     }
 
                 });
             });
 
-            this.abandoneJobsCallback = this.getTimeoutForLostJobs();
+            this.timeoutAbandonedJobs = this.getTimeoutForLostJobs();
         }, 10000);
 
     }

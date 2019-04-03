@@ -3,6 +3,7 @@ export class ProcessingCounter {
     public size: number = 0;
     public sizeMultiplication = 0;
     public units = ['b', 'kb', 'mb', 'gb', 'tb', 'pb'];
+
     public sizeMultiplicationToUnit(size: number) {
         return this.units[size];
     }

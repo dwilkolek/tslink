@@ -7,6 +7,7 @@ import { IJobConfig } from './types/job-config';
 import { JobContext } from './types/job-context';
 import { IJobDBO } from './types/job-dbo';
 import { EpDbWorker } from './worker';
+
 export class SlaveWorker extends EpDbWorker {
 
     public jobs: Job[] = [];
@@ -55,9 +56,17 @@ export class SlaveWorker extends EpDbWorker {
                 config,
                 workspaceDirectory,
                 (offset, callback: (stored: boolean) => void) => {
-                    this.db.updateJob({ _id: jobId, offset }, (updateResult) => {
-                        callback(updateResult != null && updateResult.modifiedCount != null && updateResult.modifiedCount === 1);
-                    });
+                    // TODO: slow as fuck. Store offsets somewhere else.
+                    if (iJobDbo._id != null) {
+                        this.redis.get().set(iJobDbo._id, JSON.stringify(offset)).then(() => {
+                            callback(true);
+                        }, () => {
+                            callback(false);
+                        });
+                    }
+                    // this.db.updateJob({ _id: jobId, offset }, (updateResult) => {
+                    //     callback(updateResult != null && updateResult.modifiedCount != null && updateResult.modifiedCount === 1);
+                    // });
                 },
                 iJobDbo.offset,
             );

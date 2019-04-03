@@ -29,10 +29,16 @@ export class ConfigProvider {
                 name: 'epjs',
                 url: 'mongodb://localhost:27017',
             },
+            forceSlowDownOnMemory: 1000,
             jobsDirectory: './jobs',
             limitJobsPerWorker: 1,
+            redis: {
+                host: '127.0.0.1',
+                port: 6379,
+            },
             tempZipDirectory: './zips',
             workspaceDirectory: './workspace',
+
         };
 
         try {
