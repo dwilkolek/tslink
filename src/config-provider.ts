@@ -26,7 +26,7 @@ export class ConfigProvider {
         this.config = {
             cpus: 8,
             db: {
-                name: 'epjs',
+                name: 'tslink',
                 url: 'mongodb://localhost:27017',
             },
             forceSlowDownOnMemory: 1000,
@@ -42,10 +42,10 @@ export class ConfigProvider {
         };
 
         try {
-            const userConfig = JSON.parse(fs.readFileSync('./epjs-config.json').toString());
+            const userConfig = JSON.parse(fs.readFileSync('./config.json').toString());
             Object.assign(this.config, userConfig);
         } catch (e) {
-            console.warn('File epjs-config.json is missing. Using default config');
+            console.warn('File config.json is missing. Using default config');
         }
     }
 }

@@ -5,3 +5,98 @@
 h3 {
     margin: 5px 0;
 }
+
+.debug {
+    padding: 20px;
+}
+
+form {
+    margin: 20px 0;
+}
+
+.graph {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
+    .edge {
+        stroke: #666;
+        fill: none;
+
+        .edge-label {
+            stroke: none;
+            font-size: 12px;
+            fill: #666;
+        }
+    }
+
+    .panning-rect {
+        fill: transparent;
+        cursor: move;
+    }
+
+    .node-group {
+        .node {
+            &:focus {
+                outline: none;
+            }
+        }
+    }
+
+    path {
+        stroke: #666 !important;
+    }
+}
+
+.node-box {
+    stroke-width: 1;
+    stroke: rgb(0, 0, 0);
+    fill: #ecffc4 !important;
+}
+
+.node {
+    &:hover {
+        cursor: pointer;
+        .node-box {
+            fill: #cafb62 !important;
+        }
+    }
+
+    &.selected {
+        .node-box {
+            fill: #383838 !important;
+        }
+
+        .node-name {
+            fill: rgb(200, 255, 0) !important;
+        }
+    }
+}
+
+.details {
+    pre {
+        margin-left: 10px;
+    }
+}
+.row-chart-details {
+    margin-bottom: 25px;
+}
+.chart {
+    height: 500px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+}
+
+ngx-graph {
+    pointer-events: none;
+}
+
+
+.events-enabled {
+    pointer-events: all;
+}
+
+.job-spans {
+    margin-right: 40px;
+}

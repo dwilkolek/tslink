@@ -1,38 +1,7 @@
-// .manager {
-//     display: grid;
-//     grid-template-columns: 1fr 1fr;
-//     >div {
-//         margin: 10px;
-//     }
-//     .upload-form {
-//         min-height: 100px;
-//         border: 1px solid #000000;
-//         background: #cccccc;
-//         padding: 20px;
-//     }
-//     .element-id {
-//         color: #666666;
-//         font-size: 0.96em;
-//         &:before {
-//             content: "["
-//         }
-
-//         &:after {
-//             content: "]"
-//         }
-//     }
-//     .selected {
-//         background: #8fe9ff;
-//     }
-// }
 .row {
-    margin: 24px 0px;
-//     >div {
-//         &+div {
-// margin-left: 2px solid #f00;    
-//         }
-//     }
+    margin: 24px 0;
 }
+
 form {
     padding: 20px;
     border: 1px solid #ccc;
@@ -45,11 +14,13 @@ form {
         margin: 10px 15px;
     }
 }
+
 .listings {
     .selected {
         color: rgb(200, 255, 0);
         background: #333333;
     }
+
     >div {
         max-height: 400px;
         overflow-y: auto;

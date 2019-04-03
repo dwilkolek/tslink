@@ -1,4 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -16,6 +17,10 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 
 import defaultLocale from '@angular/common/locales/en';
 import { registerLocaleData } from '@angular/common';
+
+import { NgxGraphModule } from '@swimlane/ngx-graph';
+import { UploadComponent } from './upload/upload.component';
+
 registerLocaleData(defaultLocale, 'en');
 
 @NgModule({
@@ -28,12 +33,15 @@ registerLocaleData(defaultLocale, 'en');
     ManagerComponent,
     SidebarComponent,
     DashboardComponent,
+    UploadComponent
   ],
   imports: [
     BrowserModule,
+    BrowserAnimationsModule,
     AppRoutingModule,
     HttpClientModule,
-    NgbModule
+    NgbModule,
+    NgxGraphModule
   ],
   providers: [],
   bootstrap: [AppComponent]

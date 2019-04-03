@@ -17,9 +17,9 @@ import { IJobConfig } from './types/job-config';
 import { IJobDBO } from './types/job-dbo';
 import { IJobDefinition } from './types/job-definition';
 import { IJobDefinitionDBO } from './types/job-definition-dbo';
-import { EpDbWorker } from './worker';
+import { TSlinkDbWorker } from './worker';
 
-export class MasterWorker extends EpDbWorker {
+export class MasterWorker extends TSlinkDbWorker {
     public app: express.Application;
 
     public runningJobs = 0;
@@ -43,7 +43,7 @@ export class MasterWorker extends EpDbWorker {
 
     constructor() {
         super();
-        console.log('> Welcome to epjs >');
+        console.log('> Welcome to TSlink >');
         console.log('Master pid:', process.pid);
 
         if (ConfigProvider.isDev) {
@@ -367,11 +367,12 @@ export class MasterWorker extends EpDbWorker {
                         const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
                         delete jobCopy._id;
                         jobCopy.status = JobStatusEnum.STORED;
+                        jobCopy.previousJob_id = jobdbo._id;
                         jobdbo.endDateTime = new Date();
                         this.db.updateJob(jobdbo, (up) => {
-                            console.log(`moved to abandoned ${jobdbo._id}, ${jobdbo.status}`);
+                            console.log(`moved to abandoned ${jobdbo._id} and restore later`);
                             this.db.storeJob(jobCopy, () => {
-                                console.log(`restored job ${jobdbo._id}, ${jobdbo.status}`);
+                                console.log(`restored job ${jobdbo._id} -> ${jobCopy._id}`);
                             });
                         });
                     } else {

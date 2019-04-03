@@ -6,9 +6,8 @@ import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
 import { JobContext } from './types/job-context';
 import { IJobDBO } from './types/job-dbo';
-import { EpDbWorker } from './worker';
-
-export class SlaveWorker extends EpDbWorker {
+import { TSlinkDbWorker } from './worker';
+export class SlaveWorker extends TSlinkDbWorker {
 
     public jobs: Job[] = [];
 
@@ -101,27 +100,32 @@ export class SlaveWorker extends EpDbWorker {
         // tslint:disable-next-line:no-unsafe-any
         const jobDefinition = mod.default(jobContext);
         // tslint:disable-next-line:no-unsafe-any
-        const job = new Job(this.db, jobId, jobDefinition, jobContext);
-        this.jobs.push(job);
-        job.run()
-            .then((jobResolve: Job) => {
-                this.deleteJobFromList(jobResolve._id);
-                this.updateFinished(jobId, jobContext, jobDefinitionId, jobResolve);
-                // tslint:disable-next-line:no-unsafe-any
-                if (mod.afterDestroy) {
-                    // tslint:disable-next-line:no-unsafe-any
-                    mod.afterDestroy(jobContext);
-                }
-                console.log('Update to FINISHED', jobId);
 
-            })
-            .catch((e) => {
-                console.log('Update to FAILED', jobId, e);
-                this.deleteJobFromList(jobId);
-                this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, e, job,
+        // tslint:disable-next-line:no-unsafe-any
+        this.db.updateJob({ _id: jobId, connections: jobDefinition.connections }, () => {
+            // tslint:disable-next-line:no-unsafe-any
+            const job = new Job(this.db, jobId, jobDefinition, jobContext);
+            this.jobs.push(job);
+            job.run()
+                .then((jobResolve: Job) => {
+                    this.deleteJobFromList(jobResolve._id);
+                    this.updateFinished(jobId, jobContext, jobDefinitionId, jobResolve);
                     // tslint:disable-next-line:no-unsafe-any
-                    jobDefinition.progress ? jobDefinition.progress() : 0);
-            });
+                    if (mod.afterDestroy) {
+                        // tslint:disable-next-line:no-unsafe-any
+                        mod.afterDestroy(jobContext);
+                    }
+                    console.log('Update to FINISHED', jobId);
+
+                })
+                .catch((e) => {
+                    console.log('Update to FAILED', jobId, e);
+                    this.deleteJobFromList(jobId);
+                    this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, e, job,
+                        // tslint:disable-next-line:no-unsafe-any
+                        jobDefinition.progress ? jobDefinition.progress() : 0);
+                });
+        });
     }
 
     public updateError(jobId: string, status: JobStatusEnum, jobContext: JobContext,
