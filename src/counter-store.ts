@@ -43,15 +43,15 @@ export class CounterStore {
                     done(null, chunk);
                 });
             } else {
-                // if (typeof chunk === 'object') {
-                //     this.putIn(name, Buffer.from(JSON.stringify(chunk)));
-                // } else if (typeof chunk === 'string') {
-                //     this.putIn(name, Buffer.from(chunk));
-                // } else if (chunk instanceof Buffer) {
-                //     this.putIn(name, Buffer.from(chunk));
-                // } else {
-                //     console.warn('Cannot process in counter', name, chunk);
-                // }
+                if (typeof chunk === 'object') {
+                    this.putIn(name, Buffer.from(JSON.stringify(chunk)));
+                } else if (typeof chunk === 'string') {
+                    this.putIn(name, Buffer.from(chunk));
+                } else if (chunk instanceof Buffer) {
+                    this.putIn(name, Buffer.from(chunk));
+                } else {
+                    console.warn('Cannot process in counter', name, chunk);
+                }
 
                 done(null, chunk);
             }
