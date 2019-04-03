@@ -4,17 +4,17 @@ import { ConfigProvider } from './config-provider';
 import { FileProvider } from './file-provider';
 import { MasterWorker } from './master-worker';
 import { SlaveWorker } from './slave-worker';
-import { EpDbWorker } from './worker';
+import { TSlinkDbWorker } from './worker';
 
 appModulePath.addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
 
-class EPJS {
+class TSlink {
 
     public static bootstrap() {
-        return new EPJS();
+        return new TSlink();
     }
 
-    private worker: EpDbWorker;
+    private worker: TSlinkDbWorker;
 
     constructor() {
         this.worker = cluster.isMaster ? new MasterWorker() : new SlaveWorker();
@@ -22,4 +22,4 @@ class EPJS {
 
 }
 
-export const server = EPJS.bootstrap();
+export const server = TSlink.bootstrap();

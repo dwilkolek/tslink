@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceFolder}\\dist\\epjs.js",
+            "program": "${workspaceFolder}\\dist\\tslink.js",
             // "preLaunchTask": "npm: scripts",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"

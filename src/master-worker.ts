@@ -43,7 +43,7 @@ export class MasterWorker extends EpDbWorker {
 
     constructor() {
         super();
-        console.log('> Welcome to epjs >');
+        console.log('> Welcome to TSlink >');
         console.log('Master pid:', process.pid);
 
         if (ConfigProvider.isDev) {

@@ -1,5 +1,5 @@
 import { DBQueries } from './db-queries';
 
-export class EpDbWorker {
+export class TSlinkDbWorker {
     public db: DBQueries = new DBQueries();
 }

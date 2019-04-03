@@ -19,11 +19,3 @@ gulp.task('watch', function(){
     gulp.watch('src/*', gulp.series('scripts'));
   return
 });
-
-gulp.task('release', function() {
-  return Promise.all(
-    platforms.map(platform => {
-      return exec(['dist/epjs.js', '--target', 'host', '--output', `release/epjs.${platform.ext}`])
-    })
-  )  
-})
