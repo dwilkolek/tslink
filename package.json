@@ -1,19 +1,19 @@
 {
-  "name": "epjs",
+  "name": "tslink",
   "version": "1.0.0",
   "description": "",
-  "main": "epjs.js",
+  "main": "tslink.js",
   "scripts": {
     "preinstall": "cd ui && npm install && cd ..",
     "clean": "gulp clean",
     "build": "gulp scripts",
     "prerelease": "gulp scripts && cd ui && npm run release && cd .. && npm run lint",
     "release": "npm run pkg-backend",
-    "pkg-windows": "pkg package.json --target node10-win-x64 --output release/epjs.exe",
-    "pkg-linux": "pkg package.json --target node10-linux-x64 --output release/epjs",
-    "pkg-mac": "pkg package.json --target node10-mac-x64 --output release/epjs.app",
+    "pkg-windows": "pkg package.json --target node10-win-x64 --output release/tslink.exe",
+    "pkg-linux": "pkg package.json --target node10-linux-x64 --output release/tslink",
+    "pkg-mac": "pkg package.json --target node10-mac-x64 --output release/tslink.app",
     "pkg-backend": "npm run pkg-windows && npm run pkg-linux",
-    "start": "npm run build && node ./dist/epjs.js dev",
+    "start": "npm run build && node ./dist/tslink.js dev",
     "lint": "tslint --project tsconfig.json --config tslint.json"
   },
   "keywords": [],
@@ -41,7 +41,7 @@
     "mongodb": "^3.2.2",
     "unzip": "^0.1.11"
   },
-  "bin": "dist/epjs.js",
+  "bin": "dist/tslink.js",
   "pkg": {
     "assets": [
       "ui/dist/ui/**/*"

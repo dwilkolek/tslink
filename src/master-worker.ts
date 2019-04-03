@@ -16,9 +16,9 @@ import { IJobConfig } from './types/job-config';
 import { IJobDBO } from './types/job-dbo';
 import { IJobDefinition } from './types/job-definition';
 import { IJobDefinitionDBO } from './types/job-definition-dbo';
-import { EpDbWorker } from './worker';
+import { TSlinkDbWorker } from './worker';
 
-export class MasterWorker extends EpDbWorker {
+export class MasterWorker extends TSlinkDbWorker {
     public app: express.Application;
 
     public runningJobs = 0;
@@ -43,7 +43,7 @@ export class MasterWorker extends EpDbWorker {
 
     constructor() {
         super();
-        console.log('> Welcome to epjs >');
+        console.log('> Welcome to TSlink >');
         console.log('Master pid:', process.pid);
 
         if (ConfigProvider.isDev) {

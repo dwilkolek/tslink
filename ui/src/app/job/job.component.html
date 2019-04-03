@@ -13,46 +13,56 @@
     <b>End</b>: {{ job.endDateTime | date:'medium'}}
   </span>
   <span *ngIf="job.previousJob_id" class="job-spans">
-    <a [href]="'/job/' + job.previousJob_id">Previous job</a>
+    <a [routerLink]="'/job/' + job.previousJob_id">Previous job</a>
   </span>
   <br />
-  <p *ngIf="job.progress >= 0 && job.progress <= 100">
-    <ngb-progressbar type="success" [value]="job.progress"></ngb-progressbar>
+  <p>
+    <ngb-progressbar [type]="progressBarConfig.type" [value]="progressBarConfig.value" [striped]="progressBarConfig.striped"
+          [animated]="progressBarConfig.animated"></ngb-progressbar>
   </p>
-  <p *ngIf="job.progress == -1">
-    <ngb-progressbar type="success" [value]="100" [striped]="true"></ngb-progressbar>
-  </p>
+  
+  <div class="row row-chart-details">
+    <div class="col-8">
+      <div class="chart">
+        <ngx-graph class="chart-container" [view]="view" [legend]="showLegend" [links]="links" [nodes]="nodes"
+          [scheme]="colorScheme" [orientation]="'LR'" [curve]="curve" (select)="select($event)" [autoZoom]="autoZoom"
+          [enableZoom]="enableZoom" [autoCenter]="autoCenter" [draggingEnabled]="draggingEnabled">
+          <!-- (legendLabelClick)="onLegendLabelClick($event)" -->
+          <!-- (select)="select($event)" -->
+          <ng-template #defsTemplate>
+            <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4"
+              orient="auto">
+              <svg:path d="M0,-5L10,0L0,5" class="arrow-head" />
+            </svg:marker>
+          </ng-template>
 
+          <ng-template #nodeTemplate let-node>
+            <svg:g class="node events-enabled" [class.selected]="process != null && node.id == process.id">
+              <svg:rect class="node-box" [attr.width]="node.width" [attr.height]="node.height" rx="5" ry="5" [attr.fill]="node.options.color" />
+              <svg:text class="node-name"  alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.name}}</svg:text>
+            </svg:g>
+          </ng-template>
 
-  <ng-template [ngIf]="links && nodes">
-    <div class="chart">
-      <ngx-graph class="chart-container" [view]="view" [legend]="showLegend" [links]="links" [nodes]="nodes"
-        [scheme]="colorScheme" [orientation]="'LR'" [curve]="curve" (select)="select($event)" [autoZoom]="autoZoom"
-        [enableZoom]="enableZoom" [autoCenter]="autoCenter" [draggingEnabled]="draggingEnabled">
-        <!-- (legendLabelClick)="onLegendLabelClick($event)" -->
-        <!-- (select)="select($event)" -->
-        <ng-template #defsTemplate>
-          <svg:marker id="arrow" viewBox="0 -5 10 10" refX="8" refY="0" markerWidth="4" markerHeight="4" orient="auto">
-            <svg:path d="M0,-5L10,0L0,5" class="arrow-head" />
-          </svg:marker>
-        </ng-template>
+          <ng-template #linkTemplate let-link>
+            <svg:g class="edge">
+              <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
+              </svg:path>
+            </svg:g>
+          </ng-template>
 
-        <ng-template #nodeTemplate let-node>
-          <svg:g class="node events-enabled">
-            <svg:rect [attr.width]="node.width" [attr.height]="node.height" [attr.fill]="node.options.color" />
-            <svg:text alignment-baseline="central" [attr.x]="10" [attr.y]="node.height / 2">{{node.name}}</svg:text>
-          </svg:g>
-        </ng-template>
-
-        <ng-template #linkTemplate let-link>
-          <svg:g class="edge">
-            <svg:path class="line" stroke-width="2" marker-end="url(#arrow)">
-            </svg:path>
-          </svg:g>
-        </ng-template>
-
-      </ngx-graph>
+        </ngx-graph>
+      </div>
     </div>
+    <div class="col-4 details">
+      <h6>Offset</h6>
+      <pre *ngIf="job.offset">{{job.offset | json}}</pre>
+      <pre *ngIf="!job.offset">none</pre>
+      <h6>Config</h6>
+      <pre>{{job.config | json}}</pre>
+    </div>
+  </div>
+  <ng-template [ngIf]="links && nodes">
+
     <app-stats *ngIf="process" [process]="process"></app-stats>
 
 

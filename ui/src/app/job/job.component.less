@@ -37,8 +37,10 @@ form {
     }
 
     .node-group {
-        .node:focus {
-            outline: none;
+        .node {
+            &:focus {
+                outline: none;
+            }
         }
     }
 
@@ -47,10 +49,43 @@ form {
     }
 }
 
+.node-box {
+    stroke-width: 1;
+    stroke: rgb(0, 0, 0);
+    fill: #ecffc4 !important;
+}
+
+.node {
+    &:hover {
+        cursor: pointer;
+        .node-box {
+            fill: #cafb62 !important;
+        }
+    }
+
+    &.selected {
+        .node-box {
+            fill: #383838 !important;
+        }
+
+        .node-name {
+            fill: rgb(200, 255, 0) !important;
+        }
+    }
+}
+
+.details {
+    pre {
+        margin-left: 10px;
+    }
+}
+.row-chart-details {
+    margin-bottom: 25px;
+}
 .chart {
     height: 500px;
-    border-top: 1px solid #ccc;
-    border-bottom: 1px solid #ccc;
+    border: 1px solid #ccc;
+    background: #fafafa;
 }
 
 ngx-graph {
