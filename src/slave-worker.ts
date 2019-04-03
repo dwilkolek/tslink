@@ -6,8 +6,8 @@ import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
 import { JobContext } from './types/job-context';
 import { IJobDBO } from './types/job-dbo';
-import { EpDbWorker } from './worker';
-export class SlaveWorker extends EpDbWorker {
+import { TSlinkDbWorker } from './worker';
+export class SlaveWorker extends TSlinkDbWorker {
 
     public jobs: Job[] = [];
 
