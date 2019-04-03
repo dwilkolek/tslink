@@ -28,18 +28,14 @@
       </td>
       <td>
         {{ job.status }}<br />
-        <p *ngIf="job.progress >= 0 && job.progress <= 100">
-          <ngb-progressbar type="success" [value]="job.progress"></ngb-progressbar>
-        </p>
-        <p *ngIf="job.progress == -1">
-          <ngb-progressbar type="success" [value]="100" [striped]="true"></ngb-progressbar>
-        </p>
+        <ngb-progressbar [type]="job.progressBar.type" [value]="job.progressBar.value" [striped]="job.progressBar.striped"
+          [animated]="job.progressBar.animated"></ngb-progressbar>
       </td>
       <td>
         Start: {{ job.startDateTime | date:'medium'}} <br />
         End: {{ job.endDateTime | date:'medium'}}
       </td>
-    
+
       <td>
         <pre>{{ job.offset ? (job.offset | json) : 'none'}}</pre>
       </td>

@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BackendService } from '../backend.service';
 import * as shape from 'd3-shape';
+import { JobToProgressBar } from './jobToProgressBar';
 
 declare var flowchart: any;
 
@@ -27,19 +28,18 @@ export class JobComponent {
 
   hidden = true;
   job: any = null;
+
+  updateInterval = null;
+
   constructor(private backend: BackendService, private activeRoute: ActivatedRoute) {
-    console.log('init');
+
     console.log(shape);
     this.activeRoute.params.subscribe(data => {
-      this.backend.getJob(data.id).subscribe(data => {
-        this.job = data;
-        this.dataForDiagram();
-      });
-      setInterval(() => {
-        this.backend.getJob(data.id).subscribe(data => {
-          this.job = data;
-          this.dataForDiagram();
-        });
+      console.log('init');
+      this.getJob(data);
+      clearInterval(this.updateInterval);
+      this.updateInterval = setInterval(() => {
+        this.getJob(data);
       }, 10000);
 
     });
@@ -47,7 +47,16 @@ export class JobComponent {
 
   nodes: { id: string, label: string }[] = [];
   links: { source: string, target: string }[] = [];
+  progressBarConfig = {};
 
+  getJob(data) {
+    this.backend.getJob(data.id).subscribe(data => {
+      this.job = data;
+      this.job.status = this.job.status.replace(/_/g, ' ');
+      this.progressBarConfig = JobToProgressBar.get(this.job);
+      this.dataForDiagram();
+    });
+  }
 
   toggle() {
     this.hidden = !this.hidden;
@@ -73,7 +82,8 @@ export class JobComponent {
       });
 
       if (this.process != null) {
-        this.process = this.nodes.filter(node => node.id === this.process.id)[0];
+        const filteredNodes = this.nodes.filter(node => node.id === this.process.id);
+        this.process = filteredNodes.length === 1 ? filteredNodes[0] : null;
       }
       console.log(this.links, this.nodes);
     }

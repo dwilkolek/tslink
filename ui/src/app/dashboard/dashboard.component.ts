@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BackendService } from '../backend.service';
 import { Router } from '@angular/router';
+import { JobToProgressBar } from '../job/jobToProgressBar';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,6 +29,7 @@ export class DashboardComponent implements OnInit {
         job.startDatTime = job.startDatTime && new Date(job.startDatTime);
         job.endDateTime = job.endDateTime && new Date(job.endDateTime);
         job.status = job.status && job.status.replace(/_/g, ' ');
+        job.progressBar = JobToProgressBar.get(job);
         return job;
       });
     });

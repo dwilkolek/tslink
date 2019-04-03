@@ -19,6 +19,7 @@ import defaultLocale from '@angular/common/locales/en';
 import { registerLocaleData } from '@angular/common';
 
 import { NgxGraphModule } from '@swimlane/ngx-graph';
+import { UploadComponent } from './upload/upload.component';
 
 registerLocaleData(defaultLocale, 'en');
 
@@ -32,6 +33,7 @@ registerLocaleData(defaultLocale, 'en');
     ManagerComponent,
     SidebarComponent,
     DashboardComponent,
+    UploadComponent
   ],
   imports: [
     BrowserModule,

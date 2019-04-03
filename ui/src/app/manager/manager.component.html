@@ -1,49 +1,5 @@
 <h1>Job manager</h1>
 <div class="manager">
-
-  <div class="row title">
-    <div class="col-6">
-      <h5>Job Definitions</h5>
-    </div>
-    <div class="col-6">
-      <h5>Job Configs</h5>
-    </div>
-  </div>
-  <div class="row uploader">
-    <div class="col-6">
-      <form>
-        <div class="form-group">
-          <label for="job-definition">Job definition zip fip</label>
-          <input id="job-definition" class="form-control-file" type="file" #jobDefinitionFile placeholder="Upload job"
-            accept=".zip">
-        </div>
-
-        <div class="form-group">
-          <label for="job-definition-name">Job definition name</label>
-          <input id="job-definition-name" class="form-control" [value]="jobDefinitionName"
-            (input)="jobDefinitionName = $event.target.value">
-        </div>
-        <div class="form-group">
-          <button type="button" class="btn btn-danger" (click)="uploadJobDefinition()">Upload Job</button>
-        </div>
-
-
-      </form>
-
-    </div>
-    <div class="col-6">
-      <form>
-        <div class="form-group">
-          <label for="job-config">Config json file</label>
-          <input name="job-config" type="file" class="form-control-file" #jobConfigFile placeholder="Upload config"
-            accept=".json">
-        </div>
-        <div class="form-group">
-          <button type="button" class="btn btn-danger" (click)="uploadJobConfig()">Upload Config</button>
-        </div>
-      </form>
-    </div>
-  </div>
   <div class="row actions">
     <div class="col-12">
       <form>
@@ -58,24 +14,25 @@
       </form>
     </div>
   </div>
-</div>
-<div class="row listings">
-  <div class="col-6">
-    <ul class="list-group">
-      <li class="list-group-item" *ngFor="let jobDefinition of jobDefinitions"
-        [class.selected]="selectedJobDefinition == jobDefinition._id"
-        (click)="selectJobDefinition($event, jobDefinition._id)">
-        {{jobDefinition.name || "&lt;no-name&gt;"}}<br /><span class="element-id">{{jobDefinition._id}}</span>
-      </li>
-    </ul>
-  </div>
 
-  <div class="col-6">
-    <ul class="list-group">
-      <li class="list-group-item" *ngFor="let jobConfig of jobConfigs"
-        [class.selected]="selectedJobConfig == jobConfig._id" (click)="selectJobConfig($event, jobConfig._id)">
-        {{jobConfig.name}} <br /><span class="element-id">{{jobConfig._id}}</span>
-      </li>
-    </ul>
+  <div class="row listings">
+    <div class="col-6">
+      <ul class="list-group">
+        <li class="list-group-item" *ngFor="let jobDefinition of jobDefinitions"
+          [class.selected]="selectedJobDefinition == jobDefinition._id"
+          (click)="selectJobDefinition($event, jobDefinition._id)">
+          {{jobDefinition.name || "&lt;no-name&gt;"}}<br /><span class="element-id">{{jobDefinition._id}}</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-6">
+      <ul class="list-group">
+        <li class="list-group-item" *ngFor="let jobConfig of jobConfigs"
+          [class.selected]="selectedJobConfig == jobConfig._id" (click)="selectJobConfig($event, jobConfig._id)">
+          {{jobConfig.name}} <br /><span class="element-id">{{jobConfig._id}}</span>
+        </li>
+      </ul>
+    </div>
   </div>
 </div>
