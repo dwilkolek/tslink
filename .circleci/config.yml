@@ -37,3 +37,6 @@ jobs:
       # run test release!
       - run: npm run release
       - run: ls -la release
+
+      # run tests
+      - run: npm test
