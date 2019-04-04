@@ -14,7 +14,9 @@
     "pkg-mac": "pkg package.json --target node10-mac-x64 --output release/tslink.app",
     "pkg-backend": "npm run pkg-windows && npm run pkg-linux",
     "start": "npm run build && node ./dist/tslink.js dev",
-    "lint": "tslint --project tsconfig.json --config tslint.json"
+    "lint": "tslint --project tsconfig.json --config tslint.json",
+    "posttest": "cd ui && npm test && cd ..",
+    "test": ""
   },
   "keywords": [],
   "author": "",

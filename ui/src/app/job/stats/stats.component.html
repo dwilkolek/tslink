@@ -1,7 +1,7 @@
-<h4>
+<h4 *ngIf="process">
   Process: {{process.name}}
 </h4>
-<div class="row">
+<div class="row" *ngIf="process">
   <app-in-out-counter class="counter col-6" [counter]="process.in" title="In counter"></app-in-out-counter>
   <app-in-out-counter class="counter col-6" [counter]="process.out" title="Out counter"></app-in-out-counter>
 </div>

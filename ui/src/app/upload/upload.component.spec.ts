@@ -1,14 +1,28 @@
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { UploadComponent } from './upload.component';
-
-describe('ManagerComponent', () => {
+import { DashboardComponent } from '../dashboard/dashboard.component';
+import { UploadComponent } from '../upload/upload.component';
+import { ManagerComponent } from '../manager/manager.component';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { NgxGraphModule } from '@swimlane/ngx-graph';
+import { HttpClientModule } from '@angular/common/http';
+import { AppRoutingModule } from '../app-routing.module';
+import { JobComponent } from '../job/job.component';
+import { StatsComponent } from '../job/stats/stats.component';
+import { InOutCounterComponent } from '../job/stats/in-out-counter/in-out-counter.component';
+describe('UploadComponent', () => {
   let component: UploadComponent;
   let fixture: ComponentFixture<UploadComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ UploadComponent ]
+      declarations: [ DashboardComponent, UploadComponent, ManagerComponent, JobComponent, StatsComponent, InOutCounterComponent],
+      imports: [
+        NgbModule,
+        NgxGraphModule,
+        HttpClientModule,
+        AppRoutingModule
+      ]
     })
     .compileComponents();
   }));
