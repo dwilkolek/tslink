@@ -1,7 +1,5 @@
 FROM node:10
 
-RUN apt-get update
-
 WORKDIR /var/tslink   
 
 COPY ./release/tslink ./
