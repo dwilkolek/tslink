@@ -7,7 +7,8 @@ export class RedisManager {
 
     public get(): IORedis.Redis {
         if (!this._redis) {
-            this._redis = new IORedis(ConfigProvider.get().redis.port, ConfigProvider.get().redis.host);
+            const options: IORedis.RedisOptions = Object.assign({}, ConfigProvider.get().redis.options) as IORedis.RedisOptions;
+            this._redis = new IORedis(ConfigProvider.get().redis.port, ConfigProvider.get().redis.host, options);
         }
         return this._redis;
 

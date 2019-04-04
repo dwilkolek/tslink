@@ -1,23 +1,19 @@
 import * as cluster from 'cluster';
-import { resolve } from 'dns';
 import * as express from 'express';
 import * as expressFileupload from 'express-fileupload';
 import * as fs from 'fs';
 import * as fstream from 'fstream';
-import { Cursor, FilterQuery } from 'mongodb';
+import { Cursor } from 'mongodb';
 import * as os from 'os';
 import * as path from 'path';
 import { Transform } from 'stream';
 import * as unzip from 'unzip';
 import { isArray } from 'util';
 import { ConfigProvider } from './config-provider';
-import { DbJobProcessor } from './db-job-processor';
 import { FileProvider } from './file-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
 import { IJobDBO } from './types/job-dbo';
-import { IJobDefinition } from './types/job-definition';
-import { IJobDefinitionDBO } from './types/job-definition-dbo';
 import { TSlinkWorker } from './worker';
 
 export class MasterWorker extends TSlinkWorker {
@@ -29,7 +25,6 @@ export class MasterWorker extends TSlinkWorker {
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
-    private dbJobProcessor = new DbJobProcessor(process.pid);
 
     private allowedExt = [
         '.js',
@@ -55,13 +50,13 @@ export class MasterWorker extends TSlinkWorker {
         this.forkCores();
         this.app = this.initExpress();
         this.createDirectories();
-        this.dbJobProcessor.start();
     }
     public forkCores() {
-        const cpus = ConfigProvider.get().cpus || os.cpus().length;
-        console.log(`Forking for ${cpus} CPUs`);
+        const cpus = ConfigProvider.get().slaveWorkerCount || os.cpus().length;
+        console.log(`Forking for ${cpus} slaveWorkers`);
+        cluster.fork({ type: 'dbworker' });
         for (let i = 0; i < cpus; i++) {
-            cluster.fork();
+            cluster.fork({ type: 'slaveworker' });
         }
 
     }

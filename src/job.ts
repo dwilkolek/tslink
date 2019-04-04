@@ -83,7 +83,7 @@ export class Job {
             }).then(() => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
             });
-        }, 10000);
+        }, 30000);
     }
 
     private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void) {
@@ -103,7 +103,7 @@ export class Job {
                 this.timeout = this.getTimeoutIsDone(resolve);
             }
 
-        }, 5000);
+        }, 25000);
     }
     private pipeNext(stream: Stream, connectionNext: IConnectionNext): Stream[] {
         if (connectionNext) {

@@ -1,3 +1,4 @@
+import * as cluster from 'cluster';
 import * as fs from 'fs';
 import { IConfig } from './config';
 
@@ -24,28 +25,32 @@ export class ConfigProvider {
 
     private constructor() {
         this.config = {
-            cpus: 8,
             db: {
                 name: 'tslink',
+                options: {},
                 url: 'mongodb://localhost:27017',
             },
             forceSlowDownOnMemory: 1000,
+            inMemoryOffsetCaching: true,
             jobsDirectory: './jobs',
             limitJobsPerWorker: 1,
             redis: {
                 host: '127.0.0.1',
+                options: {},
                 port: 6379,
             },
+            slaveWorkerCount: 8,
             tempZipDirectory: './zips',
             workspaceDirectory: './workspace',
-
         };
 
         try {
             const userConfig = JSON.parse(fs.readFileSync('./config.json').toString());
             Object.assign(this.config, userConfig);
         } catch (e) {
-            console.warn('File config.json is missing. Using default config');
+            if (cluster.isMaster) {
+                console.warn('File config.json is missing. Using default config');
+            }
         }
     }
 }

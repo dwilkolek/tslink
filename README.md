@@ -13,22 +13,21 @@
 ## config.json (should be in the same directory as executable)
 ```
 {
-    cpus: number;
-    db: {
-        url: string,
-        name: string,
-    };
-    port?: number;
-    jobsDirectory: './jobs';
-    tempZipDirectory: './zips';
-    workspaceDirectory: './workspace';
-    limitJobsPerWorker: number;
-    forceSlowDownOnMemory: number;
-    redis: {
-        port: number,
-        host: string,
-        options?: any,
-    };
+    "db": {
+        "name": "tslink",
+        "url": "mongodb: //localhost:27017"
+    },
+    "forceSlowDownOnMemory": 1000,
+    "inMemoryOffsetCaching": true,
+    "jobsDirectory": "./jobs",
+    "limitJobsPerWorker": 1,
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379
+    },
+    "slaveWorkerCount": 8,
+    "tempZipDirectory": "./zips",
+    "workspaceDirectory": "./workspace"
 }
 ```
 
@@ -46,4 +45,9 @@ Server is listening at :9090
 - windows `./tslink.exe`
 Server is listening at :4200
 
+## running from docker-compose
+- Before running it go through 
+    `npm install && npm run release`
+- then:
+    `npm run docker-build && npm run docker-run`
 Enjoy :)

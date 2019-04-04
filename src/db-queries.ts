@@ -1,6 +1,6 @@
 import {
     Collection, Cursor, Db, FilterQuery, FindOneAndUpdateOption,
-    InsertOneWriteOpResult, MongoClient, ObjectID, UpdateWriteOpResult,
+    InsertOneWriteOpResult, MongoClient, MongoClientOptions, ObjectID, UpdateWriteOpResult,
 } from 'mongodb';
 import * as process from 'process';
 import { ConfigProvider } from './config-provider';
@@ -39,6 +39,9 @@ export class DBQueries {
     }
 
     public async updateJob(jobDBO: IJobDBO) {
+        if (jobDBO.lastUpdate == null) {
+            jobDBO.lastUpdate = Date.now();
+        }
         const collection = await this.jobs();
         return collection.updateOne({ _id: new ObjectID(jobDBO._id) }, { $set: jobDBO });
     }
@@ -103,7 +106,9 @@ export class DBQueries {
             if (this.mongoDb) {
                 resolve(this.mongoDb);
             } else {
-                MongoClient.connect(ConfigProvider.get().db.url, { useNewUrlParser: true }).then((client: MongoClient) => {
+                const options: MongoClientOptions =
+                    Object.assign({ useNewUrlParser: true }, ConfigProvider.get().db.options) as MongoClientOptions;
+                MongoClient.connect(ConfigProvider.get().db.url, options).then((client: MongoClient) => {
                     this.mongoDb = client.db(ConfigProvider.get().db.name);
                     resolve(this.mongoDb);
                 });
