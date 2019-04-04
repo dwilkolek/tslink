@@ -185,9 +185,9 @@ export class MasterWorker extends TSlinkWorker {
         app.get('*', (req: express.Request, res: express.Response) => {
             const url = path.resolve(path.join(__dirname, ConfigProvider.uiPath));
             if (this.allowedExt.filter((ext) => req.url.indexOf(ext) > 0).length > 0) {
-                res.sendFile(`${url}${req.url}`);
+                res.sendFile(path.join(url, req.url));
             } else {
-                res.sendFile(`${url}\\index.html`);
+                res.sendFile(path.join(url, 'index.html'));
             }
         });
 

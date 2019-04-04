@@ -1,0 +1,21 @@
+version: '3'
+services:
+  tslink:
+    image: tslink:stapshot
+    container_name: tslink
+    restart: always
+    build: .
+    ports:
+      - '9190:9190'
+    links:
+      - redis
+      - mongo
+    depends_on:
+      - mongo
+      - redis
+  mongo:
+    container_name: mongo
+    image: 'mongo:4'
+  redis:
+    container_name: redis
+    image: 'redis:4.0.11'
