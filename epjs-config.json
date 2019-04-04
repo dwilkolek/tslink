@@ -1,9 +1,0 @@
-{
-    "cpus": 4,
-    "db" : {
-        "url": "mongodb://localhost:27017",
-        "name": "tslink"
-    },
-    "tempJobDir": "tmp-jobs",
-    "limitJobsPerWorker": 1
-}
