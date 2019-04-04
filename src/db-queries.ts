@@ -20,12 +20,12 @@ export class DBQueries {
 
     public async findJobConfigs(): Promise<Cursor<IJobConfig>> {
         const collection = await this.jobConfigs();
-        return new Promise((resolve) => { collection.find({}, {}); });
+        return new Promise((resolve) => { resolve(collection.find({}, {})); });
     }
 
     public async findJobs(query: FilterQuery<IJobDBO> = {}): Promise<Cursor<IJobDBO>> {
         const collection = await this.jobs();
-        return collection.find(query, {});
+        return new Promise((resolve) => { resolve(collection.find(query, {})); });
     }
 
     public async storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO) {
@@ -38,7 +38,7 @@ export class DBQueries {
         return collection.insertOne(jobConfig);
     }
 
-    public async updateJob(jobDBO: IJobDBO, callback?: (updateResult: UpdateWriteOpResult) => void) {
+    public async updateJob(jobDBO: IJobDBO) {
         const collection = await this.jobs();
         return collection.updateOne({ _id: new ObjectID(jobDBO._id) }, { $set: jobDBO });
     }

@@ -81,7 +81,7 @@ export class Job {
                 _id: this._id,
                 progress: this.jobDescription.progress ? this.jobDescription.progress() : -1,
                 statistics: this.counterStore.json(true),
-            }, () => {
+            }).then(() => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
             });
         }, 10000);

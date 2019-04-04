@@ -101,7 +101,7 @@ export class SlaveWorker extends TSlinkWorker {
         const jobDefinition = mod.default(jobContext);
 
         // tslint:disable-next-line:no-unsafe-any
-        this.db.updateJob({ _id: jobId, connections: jobDefinition.connections }, () => {
+        this.db.updateJob({ _id: jobId, connections: jobDefinition.connections }).then(() => {
             // tslint:disable-next-line:no-unsafe-any
             const job = new Job(this.db, jobId, jobDefinition, jobContext);
             this.jobs.push(job);
@@ -140,7 +140,7 @@ export class SlaveWorker extends TSlinkWorker {
             statistics: jobResolved && jobResolved.counterStore.json() || null,
             status,
         };
-        this.db.updateJob(up, () => {
+        this.db.updateJob(up).then(() => {
             if (jobContext.jobConfig.deleteWorkspaceOnError) {
                 FileProvider.rmdirAsync(jobContext.workspaceDirectory, () => {
                     console.log('Deleted workspace ', jobId);
@@ -159,7 +159,7 @@ export class SlaveWorker extends TSlinkWorker {
             progress: 100,
             statistics: jobResolved.counterStore.json(),
             status: JobStatusEnum.FINISHED,
-        }, () => {
+        }).then(() => {
             if (jobContext.jobConfig.deleteWorkspaceOnFinish) {
                 FileProvider.rmdirAsync(jobContext.workspaceDirectory, () => {
                     console.log('Deleted workspace on error ', jobId);

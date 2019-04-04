@@ -23,7 +23,7 @@
   
   <div class="row row-chart-details">
     <div class="col-8">
-      <div class="chart">
+      <div class="chart"  *ngIf="nodes && links && nodes.length > 0 && links.length > 0">
         <ngx-graph class="chart-container" [view]="view" [legend]="showLegend" [links]="links" [nodes]="nodes"
           [scheme]="colorScheme" [orientation]="'LR'" [curve]="curve" (select)="select($event)" [autoZoom]="autoZoom"
           [enableZoom]="enableZoom" [autoCenter]="autoCenter" [draggingEnabled]="draggingEnabled">

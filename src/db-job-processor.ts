@@ -132,14 +132,14 @@ export class DbJobProcessor extends TSlinkWorker {
     }
 
     private async abbandonJobs() {
-        const cursor = await this.db.findJobs(this.Q_FIND_SYNCHRONIZED_JOBS_TO_RECOVER);
+        const cursor = await this.db.findJobs(this.Q_FIND_ABBANDONED_JOBS);
         while (await cursor.hasNext()) {
             const jobdbo = await cursor.next();
             if (jobdbo != null) {
                 jobdbo.endDateTime = new Date();
-                this.db.updateJob(jobdbo, (up) => {
-                    console.log(`moved to abandoned ${jobdbo._id}, ${jobdbo.status}`);
-                });
+                jobdbo.status = JobStatusEnum.ABANDONED_BY_PROCESS;
+                await this.db.updateJob(jobdbo);
+                console.log(`moved to abandoned ${jobdbo._id}, ${jobdbo.status}`);
             }
         }
     }
