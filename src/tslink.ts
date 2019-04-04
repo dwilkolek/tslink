@@ -4,7 +4,7 @@ import { ConfigProvider } from './config-provider';
 import { FileProvider } from './file-provider';
 import { MasterWorker } from './master-worker';
 import { SlaveWorker } from './slave-worker';
-import { TSlinkDbWorker } from './worker';
+import { TSlinkWorker } from './worker';
 
 appModulePath.addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
 
@@ -14,7 +14,7 @@ class TSlink {
         return new TSlink();
     }
 
-    private worker: TSlinkDbWorker;
+    private worker: TSlinkWorker;
 
     constructor() {
         this.worker = cluster.isMaster ? new MasterWorker() : new SlaveWorker();

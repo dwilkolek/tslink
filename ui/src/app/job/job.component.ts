@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BackendService } from '../backend.service';
 import * as shape from 'd3-shape';
-import { JobToProgressBar } from './jobToProgressBar';
+import { JobToProgressBar } from './job-to-progress-bar';
 
 declare var flowchart: any;
 

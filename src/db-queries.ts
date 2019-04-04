@@ -13,139 +13,89 @@ export class DBQueries {
 
     private mongoDb?: Db;
 
-    public findJobDefinitions(): Promise<Cursor<IJobDefinitionDBO>> {
-        return this.jobsDefinitions.then((collection) => {
-            return new Promise<Cursor<IJobDefinitionDBO>>((resolve) => {
-                resolve(collection.find({}, {}));
-            });
-        });
+    public async findJobDefinitions(): Promise<Cursor<IJobDefinitionDBO>> {
+        const collection = await this.jobsDefinitions();
+        return new Promise((resolve) => { resolve(collection.find({}, {})); });
     }
 
-    public findJobConfigs(): Promise<Cursor<IJobConfig>> {
-        return this.jobsConfigs.then((collection) => {
-            return new Promise<Cursor<IJobConfig>>((resolve) => {
-                resolve(collection.find({}, {}));
-            });
-        });
+    public async findJobConfigs(): Promise<Cursor<IJobConfig>> {
+        const collection = await this.jobConfigs();
+        return new Promise((resolve) => { collection.find({}, {}); });
     }
 
-    // public findJobs(): Promise<Cursor<IJobDBO>> {
-    //     return this.jobs.then((collection) => {
-    //         return new Promise<Cursor<IJobDBO>>((resolve) => {
-    //             resolve(collection.find({}, {}));
-    //         });
-    //     });
-    // }
-
-    public findJobs(query: FilterQuery<IJobDBO> = {}): Promise<Cursor<IJobDBO>> {
-        return this.jobs.then((collection) => {
-            return new Promise<Cursor<IJobDBO>>((resolve) => {
-                resolve(collection.find(query, {}));
-            });
-        });
+    public async findJobs(query: FilterQuery<IJobDBO> = {}): Promise<Cursor<IJobDBO>> {
+        const collection = await this.jobs();
+        return collection.find(query, {});
     }
 
-    public storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO, callback: (insertResult: InsertOneWriteOpResult) => void) {
-        this.jobsDefinitions.then((collection) => {
-            collection.insertOne(jobDefinitionDBO, (err, result) => {
-                callback(result);
-            });
-        });
+    public async storeJobDefinition(jobDefinitionDBO: IJobDefinitionDBO) {
+        const collection = await this.jobsDefinitions();
+        return collection.insertOne(jobDefinitionDBO);
     }
 
-    public storeJobConfig(jobConfig: IJobConfig, callback: (insertResult: InsertOneWriteOpResult) => void) {
-        this.jobsConfigs.then((collection) => {
-            collection.insertOne(jobConfig, (err, result) => {
-                callback(result);
-            });
-        });
+    public async storeJobConfig(jobConfig: IJobConfig) {
+        const collection = await this.jobConfigs();
+        return collection.insertOne(jobConfig);
     }
 
-    public updateJob(jobDBO: IJobDBO, callback?: (updateResult: UpdateWriteOpResult) => void) {
-        this.jobs.then((collection) => {
-            collection.updateOne({ _id: new ObjectID(jobDBO._id) }, { $set: jobDBO }, (err, result) => {
-                if (callback) {
-                    callback(result);
-                }
-            });
-        });
+    public async updateJob(jobDBO: IJobDBO, callback?: (updateResult: UpdateWriteOpResult) => void) {
+        const collection = await this.jobs();
+        return collection.updateOne({ _id: new ObjectID(jobDBO._id) }, { $set: jobDBO });
     }
 
-    public storeJob(job: IJobDBO, callback: (inserResult: InsertOneWriteOpResult) => void) {
-        this.jobs.then((collection) => {
-            collection.insertOne(job, (err, result) => {
-                callback(result);
-            });
-        });
+    public async storeJob(job: IJobDBO) {
+        const collection = await this.jobs();
+        return collection.insertOne(job);
     }
 
-    public findJobByStatusAndRun(status: JobStatusEnum): Promise<IJobDBO> {
+    public async findJobByStatusAndRun(status: JobStatusEnum): Promise<IJobDBO> {
         const options: FindOneAndUpdateOption = { returnOriginal: true };
-        return this.jobs.then((collection) => {
-            return new Promise<IJobDBO>((resolve) => {
-                collection.findOneAndUpdate({ status },
-                    {
-                        $set:
-                            { status: JobStatusEnum.PROCESSING, startDateTime: new Date(), processId: process.pid },
-                    }, options).then((data) => {
-                        resolve(data.value);
-                    });
-            });
-        });
-    }
-
-    public async findJob(id: string) {
-        return this.jobs.then((collection) => {
-            return new Promise<IJobDBO>((resolve) => {
-                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
-                    resolve(data as IJobDBO);
+        const collection = await this.jobs();
+        return new Promise<IJobDBO>((resolve) => {
+            collection.findOneAndUpdate({ status },
+                {
+                    $set:
+                        { status: JobStatusEnum.PROCESSING, startDateTime: new Date(), processId: process.pid },
+                }, options).then((data) => {
+                    resolve(data.value);
                 });
-            });
         });
     }
 
-    public findJobDefinition(id: string): Promise<IJobDefinitionDBO> {
-        return this.jobsDefinitions.then((collection) => {
-            return new Promise<IJobDefinitionDBO>((resolve) => {
-                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
-                    resolve(data as IJobDefinitionDBO);
-                });
-            });
-        });
+    public async findJob(id: string): Promise<IJobDBO | null> {
+        const collection = await this.jobs();
+        return collection.findOne({ _id: new ObjectID(id) }, {});
     }
 
-    public findJobConfig(id: string): Promise<IJobConfig> {
-        return this.jobsConfigs.then((collection: Collection<IJobConfig>) => {
-            return new Promise<IJobConfig>((resolve) => {
-                collection.findOne({ _id: new ObjectID(id) }, {}).then((data) => {
-                    resolve(data as IJobConfig);
-                });
-            });
-        });
+    public async findJobDefinition(id: string): Promise<IJobDefinitionDBO | null> {
+        const collection = await this.jobsDefinitions();
+        return collection.findOne({ _id: new ObjectID(id) }, {});
     }
 
-    private get jobsDefinitions(): Promise<Collection<IJobDefinitionDBO>> {
-        return this.db.then((db) => {
-            return new Promise<Collection<IJobDefinitionDBO>>((resolve) =>
-                resolve(db.collection('job-definitions') as Collection<IJobDefinitionDBO>),
-            );
-        });
+    public async findJobConfig(id: string): Promise<IJobConfig | null> {
+        const collection = await this.jobConfigs();
+        return collection.findOne({ _id: new ObjectID(id) }, {});
     }
 
-    private get jobsConfigs(): Promise<Collection<IJobConfig>> {
-        return this.db.then((db) => {
-            return new Promise<Collection<IJobConfig>>((resolve) =>
-                resolve(db.collection('job-configs') as Collection<IJobConfig>),
-            );
-        });
+    private async jobsDefinitions(): Promise<Collection<IJobDefinitionDBO>> {
+        const db = await this.db;
+        return new Promise<Collection<IJobDefinitionDBO>>((resolve) =>
+            resolve(db.collection('job-definitions') as Collection<IJobDefinitionDBO>),
+        );
     }
 
-    private get jobs(): Promise<Collection<IJobDBO>> {
-        return this.db.then((db) => {
-            return new Promise<Collection<IJobDBO>>((resolve) =>
-                resolve(db.collection('job') as Collection<IJobDBO>),
-            );
-        });
+    private async jobConfigs(): Promise<Collection<IJobConfig>> {
+        const db = await this.db;
+        return new Promise<Collection<IJobConfig>>((resolve) =>
+            resolve(db.collection('job-configs') as Collection<IJobConfig>),
+        );
+    }
+
+    private async jobs(): Promise<Collection<IJobDBO>> {
+        const db = await this.db;
+        return new Promise<Collection<IJobDBO>>((resolve) =>
+            resolve(db.collection('job') as Collection<IJobDBO>),
+        );
     }
 
     private get db(): Promise<Db> {

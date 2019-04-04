@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BackendService } from '../backend.service';
 import { Router } from '@angular/router';
-import { JobToProgressBar } from '../job/jobToProgressBar';
+import { JobToProgressBar } from '../job/job-to-progress-bar';
 
 @Component({
   selector: 'app-dashboard',
