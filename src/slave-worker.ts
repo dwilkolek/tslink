@@ -10,12 +10,44 @@ import { TSlinkWorker } from './worker';
 export class SlaveWorker extends TSlinkWorker {
 
     public jobs: Job[] = [];
+    public jobPromisses: Array<Promise<Job>> = [];
 
     public offsets: { [key: string]: any } = {};
     public delete?: boolean = false;
     constructor() {
         super();
-
+        process.on('message', (message) => {
+            if (message === 'SIGTERM') {
+                Object.keys(this.offsets).forEach((key) => {
+                    this.updateRedisForJob(key, true);
+                });
+                console.error('SIGTERM in process');
+                this.jobs.forEach((job) => {
+                    job.kill();
+                });
+                setTimeout(() => {
+                    process.exit();
+                }, 60000);
+            }
+        });
+        process.on('uncaughtException', (err) => {
+            Object.keys(this.offsets).forEach((key) => {
+                this.updateRedisForJob(key, true);
+            });
+            console.error('uncaughtException', err);
+        });
+        process.on('unhandledRejection', (reason, p) => {
+            Object.keys(this.offsets).forEach((key) => {
+                this.updateRedisForJob(key, true);
+            });
+            console.error('unhandledRejection', reason, p);
+        });
+        process.on('beforeExit', () => {
+            Object.keys(this.offsets).forEach((key) => {
+                this.updateRedisForJob(key, true);
+            });
+            console.error('beforeExit');
+        });
         setInterval(() => {
             if (this.jobs.length < ConfigProvider.get().limitJobsPerWorker) {
                 this.huntForJobs();
@@ -122,8 +154,9 @@ export class SlaveWorker extends TSlinkWorker {
             // tslint:disable-next-line:no-unsafe-any
             const job = new Job(this.db, jobId, jobDefinition, jobContext);
             this.jobs.push(job);
-            job.run()
-                .then((jobResolve: Job) => {
+            const promise: Promise<Job> = job.run();
+            this.jobPromisses.push(promise);
+            promise.then((jobResolve: Job) => {
                     this.deleteJobFromList(jobResolve._id);
                     this.updateFinished(jobId, jobContext, jobDefinitionId, jobResolve);
                     // tslint:disable-next-line:no-unsafe-any

@@ -9,6 +9,8 @@ import { IJobDefinition } from './types/job-definition';
 
 export class Job {
 
+    private killIt = false;
+
     private get sourceNames() {
         return Object.keys(this.jobDescription.sources);
     }
@@ -48,11 +50,14 @@ export class Job {
         });
     }
 
+    public kill() {
+        this.killIt = true;
+    }
     public run() {
 
         this.statisticCounter = this.getStatisticCounterTimeout();
         console.log('JOB CONFIG: ', this.jobContext.jobConfig);
-        return new Promise<Job>((resolve) => {
+        return new Promise<Job>((resolve, reject) => {
             this.jobDescription.beforeProcessing(this.jobContext, () => {
 
                 this.jobDescription.connections.forEach((connection) => {
@@ -69,7 +74,7 @@ export class Job {
 
                 });
 
-                this.timeout = this.getTimeoutIsDone(resolve);
+                this.timeout = this.getTimeoutIsDone(resolve, reject);
             });
         });
     }
@@ -86,8 +91,19 @@ export class Job {
         }, 30000);
     }
 
-    private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void) {
+    private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void, reject: (reason?: any) => void) {
         return setTimeout(() => {
+            if (this.killIt) {
+                if (this.statisticCounter) {
+                    clearTimeout(this.statisticCounter);
+                }
+                if (this.timeout) {
+                    clearTimeout(this.timeout);
+                }
+                this.jobDescription.afterProcessing(this.jobContext, () => {
+                    reject('KILL signal');
+                });
+            }
             if (this.workingEndPipes === 0) {
                 console.log('Finishin job:', this._id);
                 if (this.statisticCounter) {
@@ -100,7 +116,7 @@ export class Job {
                     resolve(this);
                 });
             } else {
-                this.timeout = this.getTimeoutIsDone(resolve);
+                this.timeout = this.getTimeoutIsDone(resolve, reject);
             }
 
         }, 25000);

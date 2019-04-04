@@ -58,7 +58,23 @@ export class MasterWorker extends TSlinkWorker {
         for (let i = 0; i < cpus; i++) {
             cluster.fork({ type: 'slaveworker' });
         }
+        setInterval(() => {
+            if (Object.keys(cluster.workers).length < (cpus + 2)) {
+                console.log('Restoring slaveWorker');
+                cluster.fork({ type: 'slaveworker' });
+            }
+        }, 30000);
 
+        process.on('SIGTERM', () => {
+            console.log('SIGTERM signal received.');
+            Object.keys(cluster.workers).forEach((key) => {
+                const maybeWorker = cluster.workers[key];
+                if (maybeWorker != null) {
+                    const worker = maybeWorker as cluster.Worker;
+                    worker.send('SIGTERM');
+                }
+            });
+        });
     }
 
     public createDirectories() {
