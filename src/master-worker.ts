@@ -1,4 +1,5 @@
 import * as cluster from 'cluster';
+import { resolve } from 'dns';
 import * as express from 'express';
 import * as expressFileupload from 'express-fileupload';
 import * as fs from 'fs';
@@ -10,22 +11,25 @@ import { Transform } from 'stream';
 import * as unzip from 'unzip';
 import { isArray } from 'util';
 import { ConfigProvider } from './config-provider';
+import { DbJobProcessor } from './db-job-processor';
 import { FileProvider } from './file-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
 import { IJobDBO } from './types/job-dbo';
 import { IJobDefinition } from './types/job-definition';
 import { IJobDefinitionDBO } from './types/job-definition-dbo';
-import { TSlinkDbWorker } from './worker';
+import { TSlinkWorker } from './worker';
 
-export class MasterWorker extends TSlinkDbWorker {
+export class MasterWorker extends TSlinkWorker {
     public app: express.Application;
 
     public runningJobs = 0;
-    public abandoneJobsCallback: NodeJS.Timeout;
+    public timeoutAbandonedJobs?: NodeJS.Timeout;
+    public timeoutToUpdateOffsetsInDb?: NodeJS.Timeout;
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
+    private dbJobProcessor = new DbJobProcessor();
 
     private allowedExt = [
         '.js',
@@ -39,8 +43,6 @@ export class MasterWorker extends TSlinkDbWorker {
         '.svg',
     ];
 
-    private timeoutForLostJobs?: NodeJS.Timeout;
-
     constructor() {
         super();
         console.log('> Welcome to TSlink >');
@@ -53,8 +55,7 @@ export class MasterWorker extends TSlinkDbWorker {
         this.forkCores();
         this.app = this.initExpress();
         this.createDirectories();
-
-        this.abandoneJobsCallback = this.getTimeoutForLostJobs();
+        this.dbJobProcessor.start();
     }
     public forkCores() {
         const cpus = ConfigProvider.get().cpus || os.cpus().length;
@@ -130,9 +131,8 @@ export class MasterWorker extends TSlinkDbWorker {
             };
             if (req.files != null && req.files.job != null) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.job) ? req.files.job[0] : req.files.job;
-                this.db.storeJobDefinition(jobDefinition, (storeResult) => {
+                this.db.storeJobDefinition(jobDefinition).then((storeResult) => {
                     this.storeToDisk(uploadedFile.data, storeResult.insertedId.toHexString() || '');
-
                     res.json({ id: storeResult.insertedId.toHexString() });
                 });
             } else {
@@ -144,7 +144,7 @@ export class MasterWorker extends TSlinkDbWorker {
         app.post('/api/job-config', (req: express.Request, res: express.Response) => {
             if (req.files != null && req.files.config) {
                 const uploadedFile: expressFileupload.UploadedFile = isArray(req.files.config) ? req.files.config[0] : req.files.config;
-                this.db.storeJobConfig(JSON.parse(uploadedFile.data.toString()) as IJobConfig, (storeResult) => {
+                this.db.storeJobConfig(JSON.parse(uploadedFile.data.toString()) as IJobConfig).then((storeResult) => {
                     res.json({ id: storeResult.insertedId.toHexString() });
                 });
             } else {
@@ -160,17 +160,21 @@ export class MasterWorker extends TSlinkDbWorker {
                 const name = req.query.name;
                 this.db.findJobDefinition(jobId).then((jobDefinition) => {
                     this.db.findJobConfig(configId).then((jobConfig) => {
-                        const jobDBO: IJobDBO = {
-                            config: jobConfig,
-                            jobDefinitionId: jobId,
-                            name,
-                            progress: -1,
-                            status: JobStatusEnum.STORED,
-                        };
-                        /* tslint:enable:no-unsafe-any */
-                        this.db.storeJob(jobDBO, (result) => {
-                            res.json({ id: result.insertedId });
-                        });
+                        if (jobConfig != null) {
+                            const jobDBO: IJobDBO = {
+                                config: jobConfig,
+                                jobDefinitionId: jobId,
+                                name,
+                                progress: -1,
+                                status: JobStatusEnum.STORED,
+                            };
+                            /* tslint:enable:no-unsafe-any */
+                            this.db.storeJob(jobDBO).then((result) => {
+                                res.json({ id: result.insertedId });
+                            });
+                        } else {
+                            res.json({ error: 'no-config' });
+                        }
                     });
                 });
             } else {
@@ -224,76 +228,6 @@ export class MasterWorker extends TSlinkDbWorker {
                 throw err;
             }
         });
-    }
-
-    private getTimeoutForLostJobs() {
-        const query: FilterQuery<IJobDBO> = {
-            $or: [
-                {
-                    $and:
-                        [
-                            {
-                                processId: {
-                                    $nin: Object.keys(cluster.workers).map((workerKey) => {
-
-                                        let pid = -1;
-                                        const worker = cluster.workers[workerKey];
-                                        if (worker != null) {
-                                            if (process.pid !== worker.process.pid) {
-                                                pid = worker.process.pid;
-                                            }
-                                        }
-                                        return pid;
-                                    }),
-                                },
-                            },
-                            {
-                                status: JobStatusEnum.PROCESSING,
-                            },
-                        ],
-                },
-                {
-                    $and:
-                        [
-                            { 'config.recoverOnFail': true },
-                            { status: JobStatusEnum.FAILED },
-                        ],
-                },
-            ],
-
-        };
-
-        return setTimeout(() => {
-            clearTimeout(this.abandoneJobsCallback);
-            this.db.findJobs(query).then((cursor) => {
-                cursor.forEach((jobdbo) => {
-                    jobdbo.processId = 0;
-                    jobdbo.status = JobStatusEnum.ABANDONED_BY_PROCESS;
-                    if (jobdbo.config != null && jobdbo.config.recoverOnFail === true) {
-                        const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
-                        delete jobCopy._id;
-                        jobCopy.status = JobStatusEnum.STORED;
-                        jobCopy.previousJob_id = jobdbo._id;
-                        jobdbo.endDateTime = new Date();
-                        this.db.updateJob(jobdbo, (up) => {
-                            console.log(`moved to abandoned ${jobdbo._id} and restore later`);
-                            this.db.storeJob(jobCopy, () => {
-                                console.log(`restored job ${jobdbo._id} -> ${jobCopy._id}`);
-                            });
-                        });
-                    } else {
-                        jobdbo.endDateTime = new Date();
-                        this.db.updateJob(jobdbo, (up) => {
-                            console.log(`moved to abandoned ${jobdbo._id}`);
-                        });
-                    }
-
-                });
-            });
-
-            this.abandoneJobsCallback = this.getTimeoutForLostJobs();
-        }, 10000);
-
     }
 
 }

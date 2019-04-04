@@ -57,10 +57,10 @@ export class Job {
             this.jobDescription.beforeProcessing(this.jobContext, () => {
 
                 this.jobDescription.connections.forEach((connection) => {
-                    let streamed = this.getReadStream(connection.from);
+                    const streamed = this.getReadStream(connection.from);
                     this.streams[connection.from] = streamed;
-                    const readerOutStream = this.counterStore.collectCounterOut(connection.from, this.jobContext.jobConfig.objectMode);
-                    streamed = streamed.pipe(readerOutStream);
+                    // const readerOutStream = this.counterStore.collectCounterOut(connection.from, this.jobContext.jobConfig.objectMode);
+                    // streamed = streamed.pipe(readerOutStream);
                     connection.to.forEach((connTo) => {
                         const connectionNext = this.pipeNext(streamed, connTo);
                         connectionNext.forEach((_conn) => {
@@ -80,7 +80,7 @@ export class Job {
             this.db.updateJob({
                 _id: this._id,
                 progress: this.jobDescription.progress ? this.jobDescription.progress() : -1,
-                statistics: this.counterStore.json(),
+                statistics: this.counterStore.json(true),
             }, () => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
             });
@@ -115,7 +115,6 @@ export class Job {
 
             let streamNext: Stream = stream
                 .pipe(inStream);
-
             if (transform) {
                 streamNext = streamNext.pipe(transform);
                 const outStream = this.counterStore.collectCounterOut(connectionNext.name, this.jobContext.jobConfig.objectMode);
@@ -124,9 +123,6 @@ export class Job {
             if (!transform && write) {
                 streamNext = streamNext.pipe(write);
                 this.workingEndPipes++;
-                // write.on('close', () => {
-                //     this.workingEndPipes--;
-                // });
                 write.on('finish', () => {
                     this.workingEndPipes--;
                 });

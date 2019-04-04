@@ -6,8 +6,8 @@ import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
 import { JobContext } from './types/job-context';
 import { IJobDBO } from './types/job-dbo';
-import { TSlinkDbWorker } from './worker';
-export class SlaveWorker extends TSlinkDbWorker {
+import { TSlinkWorker } from './worker';
+export class SlaveWorker extends TSlinkWorker {
 
     public jobs: Job[] = [];
 
@@ -55,9 +55,17 @@ export class SlaveWorker extends TSlinkDbWorker {
                 config,
                 workspaceDirectory,
                 (offset, callback: (stored: boolean) => void) => {
-                    this.db.updateJob({ _id: jobId, offset }, (updateResult) => {
-                        callback(updateResult != null && updateResult.modifiedCount != null && updateResult.modifiedCount === 1);
-                    });
+                    // TODO: slow as fuck. Store offsets somewhere else.
+                    if (iJobDbo._id != null) {
+                        this.redis.get().set(iJobDbo._id, JSON.stringify(offset)).then(() => {
+                            callback(true);
+                        }, () => {
+                            callback(false);
+                        });
+                    }
+                    // this.db.updateJob({ _id: jobId, offset }, (updateResult) => {
+                    //     callback(updateResult != null && updateResult.modifiedCount != null && updateResult.modifiedCount === 1);
+                    // });
                 },
                 iJobDbo.offset,
             );
@@ -91,7 +99,6 @@ export class SlaveWorker extends TSlinkDbWorker {
     public spawnJob(jobId: string, mod: any, jobContext: JobContext, jobDefinitionId: string) {
         // tslint:disable-next-line:no-unsafe-any
         const jobDefinition = mod.default(jobContext);
-        // tslint:disable-next-line:no-unsafe-any
 
         // tslint:disable-next-line:no-unsafe-any
         this.db.updateJob({ _id: jobId, connections: jobDefinition.connections }, () => {

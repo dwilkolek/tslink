@@ -8,7 +8,6 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BackendService } from './backend.service';
 import { JobComponent } from './job/job.component';
 import { StatsComponent } from './job/stats/stats.component';
-import { TimeCounterComponent } from './job/stats/time-counter/time-counter.component';
 import { InOutCounterComponent } from './job/stats/in-out-counter/in-out-counter.component';
 import { ManagerComponent } from './manager/manager.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -28,7 +27,6 @@ registerLocaleData(defaultLocale, 'en');
     AppComponent,
     JobComponent,
     StatsComponent,
-    TimeCounterComponent,
     InOutCounterComponent,
     ManagerComponent,
     SidebarComponent,

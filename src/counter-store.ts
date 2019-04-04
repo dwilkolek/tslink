@@ -1,14 +1,16 @@
 import { Stream } from 'stream';
+import { ConfigProvider } from './config-provider';
 import { NodeCounter } from './counters/node-counter';
+import { ProcessingCounter } from './counters/process-counter';
 
 export class CounterStore {
-
     get counterNames() {
         return Object.keys(this.counters);
     }
 
     public counters: { [key: string]: NodeCounter } = {};
 
+    private lasUpdateDb = 0;
     constructor(private jobId: string, private jobName: string) { }
 
     public init(name: string) {
@@ -23,14 +25,24 @@ export class CounterStore {
         this.counters[name].putOut(buff);
     }
 
-    public putTime(name: string, time: number) {
-        this.counters[name].putTime(time);
-    }
-
     public collectCounterIn(name: string, objectMode: boolean) {
-        const transformStream = new Stream.Transform({objectMode});
+        const transformStream = new Stream.Transform({ objectMode, highWaterMark: 100 });
         transformStream._transform = (chunk: any, encoding: string, done) => {
-            setImmediate(() => {
+            if (this.counterExpired()) {
+                setImmediate(() => {
+                    if (typeof chunk === 'object') {
+                        this.putIn(name, Buffer.from(JSON.stringify(chunk)));
+                    } else if (typeof chunk === 'string') {
+                        this.putIn(name, Buffer.from(chunk));
+                    } else if (chunk instanceof Buffer) {
+                        this.putIn(name, Buffer.from(chunk));
+                    } else {
+                        console.warn('Cannot process in counter', name, chunk);
+                    }
+
+                    done(null, chunk);
+                });
+            } else {
                 if (typeof chunk === 'object') {
                     this.putIn(name, Buffer.from(JSON.stringify(chunk)));
                 } else if (typeof chunk === 'string') {
@@ -42,15 +54,27 @@ export class CounterStore {
                 }
 
                 done(null, chunk);
-            });
+            }
         };
         return transformStream;
     }
-
     public collectCounterOut(name: string, objectMode: boolean) {
-        const transformStream = new Stream.Transform({objectMode});
+        const transformStream = new Stream.Transform({ objectMode, highWaterMark: 100 });
         transformStream._transform = (chunk: any, encoding: string, done) => {
-            setImmediate(() => {
+            if (this.counterExpired()) {
+                setImmediate(() => {
+                    if (typeof chunk === 'object') {
+                        this.putOut(name, Buffer.from(JSON.stringify(chunk)));
+                    } else if (typeof chunk === 'string') {
+                        this.putOut(name, Buffer.from(chunk));
+                    } else if (chunk instanceof Buffer) {
+                        this.putOut(name, Buffer.from(chunk));
+                    } else {
+                        console.warn('Cannot process out counter', name, chunk);
+                    }
+                    done(null, chunk);
+                });
+            } else {
                 if (typeof chunk === 'object') {
                     this.putOut(name, Buffer.from(JSON.stringify(chunk)));
                 } else if (typeof chunk === 'string') {
@@ -61,7 +85,7 @@ export class CounterStore {
                     console.warn('Cannot process out counter', name, chunk);
                 }
                 done(null, chunk);
-            });
+            }
         };
         return transformStream;
     }
@@ -83,7 +107,10 @@ export class CounterStore {
         return header + body + footer;
     }
 
-    public json() {
+    public json(updateDb: boolean = false) {
+        if (updateDb) {
+            this.lasUpdateDb = Date.now();
+        }
         return {
             jobId: this.jobId,
             name: this.jobName,
@@ -92,4 +119,11 @@ export class CounterStore {
             }),
         };
     }
+    private counterExpired() {
+        const now = Date.now();
+        const expired = process.memoryUsage().heapUsed / 1024 / 1024 > ConfigProvider.get().forceSlowDownOnMemory
+            || (now - this.lasUpdateDb > 60 * 1000);
+        return expired;
+    }
+
 }
