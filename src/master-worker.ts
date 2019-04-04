@@ -29,7 +29,7 @@ export class MasterWorker extends TSlinkWorker {
     private port = ConfigProvider.get().port || 9090;
 
     private files: string[] = [];
-    private dbJobProcessor = new DbJobProcessor();
+    private dbJobProcessor = new DbJobProcessor(process.pid);
 
     private allowedExt = [
         '.js',

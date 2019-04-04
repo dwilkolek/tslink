@@ -21,37 +21,12 @@ export class DbJobProcessor extends TSlinkWorker {
             ],
     };
 
-    private Q_FIND_ABBANDONED_JOBS: FilterQuery<IJobDBO> = {
-        $and:
-            [
-                {
-                    processId: {
-                        $nin: Object.keys(cluster.workers).map((workerKey) => {
-
-                            let pid = -1;
-                            const worker = cluster.workers[workerKey];
-                            if (worker != null) {
-                                if (process.pid !== worker.process.pid) {
-                                    pid = worker.process.pid;
-                                }
-                            }
-                            return pid;
-                        }),
-                    },
-                },
-                {
-                    status: JobStatusEnum.PROCESSING,
-                },
-            ],
-    };
-
     private deleteRedisKeysStatus = [
         JobStatusEnum.FINISHED, JobStatusEnum.ABANDONED_BY_PROCESS, JobStatusEnum.FAILED,
     ];
 
     private chainTimeout?: NodeJS.Timeout;
-
-    constructor() {
+    constructor(private masterPid: number) {
         super();
 
     }
@@ -62,6 +37,32 @@ export class DbJobProcessor extends TSlinkWorker {
         });
     }
 
+    private Q_FIND_ABBANDONED_JOBS(): FilterQuery<IJobDBO> {
+        return {
+            $and:
+                [
+                    {
+                        processId: {
+                            $nin: Object.keys(cluster.workers).map((workerKey) => {
+
+                                let pid = -1;
+                                const worker = cluster.workers[workerKey];
+                                if (worker != null) {
+                                    if (this.masterPid !== worker.process.pid) {
+                                        pid = worker.process.pid;
+                                    }
+                                }
+                                return pid;
+                            }),
+                        },
+
+                    },
+                    {
+                        status: JobStatusEnum.PROCESSING,
+                    },
+                ],
+        };
+    }
     private setTimeoutChain() {
         return setTimeout(() => {
             this.runChain().then(() => {
@@ -132,7 +133,7 @@ export class DbJobProcessor extends TSlinkWorker {
     }
 
     private async abbandonJobs() {
-        const cursor = await this.db.findJobs(this.Q_FIND_ABBANDONED_JOBS);
+        const cursor = await this.db.findJobs(this.Q_FIND_ABBANDONED_JOBS());
         while (await cursor.hasNext()) {
             const jobdbo = await cursor.next();
             if (jobdbo != null) {
