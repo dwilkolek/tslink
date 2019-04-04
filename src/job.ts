@@ -35,7 +35,6 @@ export class Job {
 
     constructor(private db: DBQueries, public _id: string, private jobDescription: IJobDefinition,
                 private jobContext: JobContext) {
-        console.log('Working on:', process.pid, jobDescription, jobContext);
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
 
         this.sourceNames.forEach((source) => {

@@ -5,7 +5,7 @@ import { FileProvider } from './file-provider';
 import { MasterWorker } from './master-worker';
 import { SlaveWorker } from './slave-worker';
 import { TSlinkWorker } from './worker';
-console.log('path for additional node_modules', FileProvider.getSystemPath(ConfigProvider.depsPath));
+
 appModulePath.addPath(FileProvider.getSystemPath(ConfigProvider.depsPath));
 
 class TSlink {
