@@ -5,7 +5,7 @@ import { JobStatusEnum } from './job-status-enum';
 import { IJobDBO } from './types/job-dbo';
 import { TSlinkWorker } from './worker';
 
-export class DbJobProcessor extends TSlinkWorker {
+export class DbWorker extends TSlinkWorker {
 
     private Q_OUT_OF_SYNC_JOBS: FilterQuery<IJobDBO> = {
         status: {
@@ -26,12 +26,12 @@ export class DbJobProcessor extends TSlinkWorker {
     ];
 
     private chainTimeout?: NodeJS.Timeout;
-    constructor(private masterPid: number) {
+    constructor() {
         super();
-
+        this.start();
     }
 
-    public start() {
+    private start() {
         this.runChain().then(() => {
             this.chainTimeout = this.setTimeoutChain();
         });
@@ -42,20 +42,7 @@ export class DbJobProcessor extends TSlinkWorker {
             $and:
                 [
                     {
-                        processId: {
-                            $nin: Object.keys(cluster.workers).map((workerKey) => {
-
-                                let pid = -1;
-                                const worker = cluster.workers[workerKey];
-                                if (worker != null) {
-                                    if (this.masterPid !== worker.process.pid) {
-                                        pid = worker.process.pid;
-                                    }
-                                }
-                                return pid;
-                            }),
-                        },
-
+                        lastUpdate: { $lte: Date.now() - 5 * 60 * 1000 },
                     },
                     {
                         status: JobStatusEnum.PROCESSING,
@@ -88,7 +75,10 @@ export class DbJobProcessor extends TSlinkWorker {
                 const redisValue = await this.redis.get().get(jobdbo._id);
                 if (jobdbo.status != null) {
                     const updateJobObj = {
-                        _id: jobdbo._id, offset: redisValue != null ? JSON.parse(redisValue) : null, status: jobdbo.status,
+                        _id: jobdbo._id,
+                        lastUpdate: jobdbo.lastUpdate,
+                        offset: redisValue != null ? JSON.parse(redisValue) : null,
+                        status: jobdbo.status,
                     };
                     if (JobStatusEnum.FINISHED === jobdbo.status) {
                         updateJobObj.status = JobStatusEnum.FINISHED_SYNCHRONIZED;

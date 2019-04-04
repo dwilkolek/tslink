@@ -1,13 +1,14 @@
 export interface IConfig {
-    cpus: number;
+    slaveWorkerCount: number;
     db: {
         url: string,
         name: string,
+        options?: any,
     };
     port?: number;
-    jobsDirectory: './jobs';
-    tempZipDirectory: './zips';
-    workspaceDirectory: './workspace';
+    jobsDirectory: string;
+    tempZipDirectory: string;
+    workspaceDirectory: string;
     limitJobsPerWorker: number;
     forceSlowDownOnMemory: number;
     redis: {
@@ -15,4 +16,5 @@ export interface IConfig {
         host: string,
         options?: any,
     };
+    inMemoryOffsetCaching: boolean;
 }

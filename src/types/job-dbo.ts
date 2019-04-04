@@ -17,4 +17,5 @@ export interface IJobDBO {
     offset?: any;
     previousJob_id?: string;
     name?: string;
+    lastUpdate?: number;
 }

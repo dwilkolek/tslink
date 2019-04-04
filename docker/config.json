@@ -1,5 +1,5 @@
 {
-    "cpus": 8,
+    "slaveWorkerCount": 8,
     "db": {
         "url": "mongodb://mongo:27017",
         "name": "tslink"
@@ -13,5 +13,6 @@
     "redis": {
         "port": 6379,
         "host": "redis"
-    }
+    },
+    "inMemoryOffsetCaching": true
 }

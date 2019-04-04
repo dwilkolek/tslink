@@ -10,15 +10,55 @@ import { TSlinkWorker } from './worker';
 export class SlaveWorker extends TSlinkWorker {
 
     public jobs: Job[] = [];
+    public jobPromisses: Array<Promise<Job>> = [];
 
+    public offsets: { [key: string]: any } = {};
+    public delete?: boolean = false;
     constructor() {
         super();
-
+        process.on('message', (message) => {
+            if (message === 'SIGTERM') {
+                Object.keys(this.offsets).forEach((key) => {
+                    this.updateRedisForJob(key, true);
+                });
+                console.error('SIGTERM in process');
+                this.jobs.forEach((job) => {
+                    job.kill();
+                });
+                setTimeout(() => {
+                    process.exit();
+                }, 60000);
+            }
+        });
+        process.on('uncaughtException', (err) => {
+            Object.keys(this.offsets).forEach((key) => {
+                this.updateRedisForJob(key, true);
+            });
+            console.error('uncaughtException', err);
+        });
+        process.on('unhandledRejection', (reason, p) => {
+            Object.keys(this.offsets).forEach((key) => {
+                this.updateRedisForJob(key, true);
+            });
+            console.error('unhandledRejection', reason, p);
+        });
+        process.on('beforeExit', () => {
+            Object.keys(this.offsets).forEach((key) => {
+                this.updateRedisForJob(key, true);
+            });
+            console.error('beforeExit');
+        });
         setInterval(() => {
             if (this.jobs.length < ConfigProvider.get().limitJobsPerWorker) {
                 this.huntForJobs();
             }
         }, 10000);
+
+        setInterval(() => {
+            Object.keys(this.offsets).forEach((jobid) => {
+                this.updateRedisForJob(jobid);
+            });
+        }, 30000);
     }
 
     public huntForJobs() {
@@ -56,12 +96,21 @@ export class SlaveWorker extends TSlinkWorker {
                 workspaceDirectory,
                 (offset, callback: (stored: boolean) => void) => {
                     // TODO: slow as fuck. Store offsets somewhere else.
-                    if (iJobDbo._id != null) {
-                        this.redis.get().set(iJobDbo._id, JSON.stringify(offset)).then(() => {
+                    if (ConfigProvider.get().inMemoryOffsetCaching) {
+                        if (iJobDbo._id != null) {
+                            this.offsets[iJobDbo._id] = offset;
                             callback(true);
-                        }, () => {
+                        } else {
                             callback(false);
-                        });
+                        }
+                    } else {
+                        if (iJobDbo._id != null) {
+                            this.redis.get().set(iJobDbo._id, JSON.stringify(offset)).then(() => {
+                                callback(true);
+                            }, () => {
+                                callback(false);
+                            });
+                        }
                     }
                     // this.db.updateJob({ _id: jobId, offset }, (updateResult) => {
                     //     callback(updateResult != null && updateResult.modifiedCount != null && updateResult.modifiedCount === 1);
@@ -105,8 +154,9 @@ export class SlaveWorker extends TSlinkWorker {
             // tslint:disable-next-line:no-unsafe-any
             const job = new Job(this.db, jobId, jobDefinition, jobContext);
             this.jobs.push(job);
-            job.run()
-                .then((jobResolve: Job) => {
+            const promise: Promise<Job> = job.run();
+            this.jobPromisses.push(promise);
+            promise.then((jobResolve: Job) => {
                     this.deleteJobFromList(jobResolve._id);
                     this.updateFinished(jobId, jobContext, jobDefinitionId, jobResolve);
                     // tslint:disable-next-line:no-unsafe-any
@@ -129,6 +179,7 @@ export class SlaveWorker extends TSlinkWorker {
 
     public updateError(jobId: string, status: JobStatusEnum, jobContext: JobContext,
                        jobDefinitionId: string, error: any, jobResolved?: Job, progress?: number) {
+        this.updateRedisForJob(jobId, true);
         const up: IJobDBO = {
             _id: jobId,
             config: jobContext.jobConfig,
@@ -150,6 +201,7 @@ export class SlaveWorker extends TSlinkWorker {
     }
 
     public updateFinished(jobId: string, jobContext: JobContext, jobDefinitionId: string, jobResolved: Job) {
+        this.updateRedisForJob(jobId, true);
         this.db.updateJob({
             _id: jobId,
             config: jobContext.jobConfig,
@@ -179,6 +231,20 @@ export class SlaveWorker extends TSlinkWorker {
             this.jobs.splice(index, 1);
         } else {
             console.error('Failed to remove job from process ', job_id);
+        }
+    }
+
+    private updateRedisForJob(jobid: string, deleteEntry = false) {
+        if (this.offsets[jobid]) {
+            this.redis.get().set(jobid, JSON.stringify(this.offsets[jobid])).then(() => {
+                if (deleteEntry) {
+                    delete this.offsets[jobid];
+                    console.log('Redis updated with offsets from worker and deleted from offset object');
+                } else {
+                    console.log('Redis updated with offsets from worker');
+                }
+
+            });
         }
     }
 }
