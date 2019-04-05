@@ -3,6 +3,7 @@ import { FilterQuery } from 'mongodb';
 import { setInterval } from 'timers';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobDBO } from './types/job-dbo';
+import { IRedisRecord } from './types/redis-record';
 import { TSlinkWorker } from './worker';
 
 export class DbWorker extends TSlinkWorker {
@@ -42,7 +43,7 @@ export class DbWorker extends TSlinkWorker {
             $and:
                 [
                     {
-                        lastUpdate: { $lte: Date.now() - 5 * 60 * 1000 },
+                        lastUpdate: { $lte: Date.now() - 90 * 1000 },
                     },
                     {
                         status: JobStatusEnum.PROCESSING,
@@ -73,11 +74,13 @@ export class DbWorker extends TSlinkWorker {
             const jobdbo = await cursor.next();
             if (jobdbo != null && jobdbo._id != null) {
                 const redisValue = await this.redis.get().get(jobdbo._id);
+                console.log('redisValue', redisValue);
                 if (jobdbo.status != null) {
                     const updateJobObj = {
                         _id: jobdbo._id,
                         lastUpdate: jobdbo.lastUpdate,
-                        offset: redisValue != null ? JSON.parse(redisValue) : null,
+                        offset: redisValue != null ? (JSON.parse(redisValue) as IRedisRecord).offset : jobdbo.offset,
+                        progress: redisValue != null ? (JSON.parse(redisValue) as IRedisRecord).progress : jobdbo.progress,
                         status: jobdbo.status,
                     };
                     if (JobStatusEnum.FINISHED === jobdbo.status) {
@@ -114,6 +117,10 @@ export class DbWorker extends TSlinkWorker {
                 console.log(`moved to abandoned ${jobdbo._id} and restore later`);
                 const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
                 delete jobCopy._id;
+                delete jobCopy.endDateTime;
+                delete jobCopy.statistics;
+                delete jobCopy.error;
+                jobCopy.lastUpdate = Date.now();
                 jobCopy.status = JobStatusEnum.STORED;
                 jobCopy.previousJob_id = jobdbo._id;
                 await this.db.storeJob(jobCopy);

@@ -23,7 +23,7 @@ export class MasterWorker extends TSlinkWorker {
     public timeoutAbandonedJobs?: NodeJS.Timeout;
     public timeoutToUpdateOffsetsInDb?: NodeJS.Timeout;
     private port = ConfigProvider.get().port || 9090;
-
+    private maxSlaveWorkers = 1;
     private files: string[] = [];
 
     private allowedExt = [
@@ -52,18 +52,21 @@ export class MasterWorker extends TSlinkWorker {
         this.createDirectories();
     }
     public forkCores() {
-        const cpus = ConfigProvider.get().slaveWorkerCount || os.cpus().length;
-        console.log(`Forking for ${cpus} slaveWorkers`);
         cluster.fork({ type: 'dbworker' });
-        for (let i = 0; i < cpus; i++) {
-            cluster.fork({ type: 'slaveworker' });
-        }
+        this.maxSlaveWorkers = ConfigProvider.get().slaveWorkerCount || os.cpus().length + 1;
         setInterval(() => {
-            if (Object.keys(cluster.workers).length < (cpus + 2)) {
-                console.log('Restoring slaveWorker');
-                cluster.fork({ type: 'slaveworker' });
+            const workerCount = Object.keys(cluster.workers).length;
+            console.log('SlaveWorker count', workerCount - 1);
+            if (this.maxSlaveWorkers > Object.keys(cluster.workers).length) {
+                this.db.jobsToRunCount().then((numberOfStoredJobs) => {
+                    const workersLeft = this.maxSlaveWorkers - Object.keys(cluster.workers).length;
+                    const lower = workersLeft < numberOfStoredJobs ? workersLeft : numberOfStoredJobs;
+                    for (let i = 0; i < lower; i++) {
+                        cluster.fork({ type: 'slaveworker' });
+                    }
+                });
             }
-        }, 30000);
+        }, 10000);
 
         process.on('SIGTERM', () => {
             console.log('SIGTERM signal received.');

@@ -9,7 +9,6 @@ export interface IConfig {
     jobsDirectory: string;
     tempZipDirectory: string;
     workspaceDirectory: string;
-    limitJobsPerWorker: number;
     forceSlowDownOnMemory: number;
     redis: {
         port: number,

@@ -9,8 +9,6 @@ import { IJobDefinition } from './types/job-definition';
 
 export class Job {
 
-    private killIt = false;
-
     private get sourceNames() {
         return Object.keys(this.jobDescription.sources);
     }
@@ -26,6 +24,9 @@ export class Job {
     public get counterStore(): CounterStore {
         return this._counterStore;
     }
+    private killCb?: () => void;
+
+    private killIt = false;
 
     private _counterStore: CounterStore;
     private streams: { [key: string]: Stream } = {};
@@ -36,7 +37,7 @@ export class Job {
     private statisticCounter?: NodeJS.Timeout;
 
     constructor(private db: DBQueries, public _id: string, private jobDescription: IJobDefinition,
-                private jobContext: JobContext) {
+                private jobContext: JobContext, private getStoredProgress: () => number) {
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
 
         this.sourceNames.forEach((source) => {
@@ -50,7 +51,8 @@ export class Job {
         });
     }
 
-    public kill() {
+    public kill(cb: () => void) {
+        this.killCb = cb;
         this.killIt = true;
     }
     public run() {
@@ -83,7 +85,7 @@ export class Job {
         return setTimeout(() => {
             this.db.updateJob({
                 _id: this._id,
-                progress: this.jobDescription.progress ? this.jobDescription.progress() : -1,
+                progress: this.getStoredProgress(),
                 statistics: this.counterStore.json(true),
             }).then(() => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
@@ -101,7 +103,7 @@ export class Job {
                     clearTimeout(this.timeout);
                 }
                 this.jobDescription.afterProcessing(this.jobContext, () => {
-                    reject('KILL signal');
+                    reject({ killCb: this.killCb });
                 });
             }
             if (this.workingEndPipes === 0) {

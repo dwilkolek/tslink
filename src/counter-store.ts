@@ -1,7 +1,5 @@
 import { Stream } from 'stream';
-import { ConfigProvider } from './config-provider';
 import { NodeCounter } from './counters/node-counter';
-import { ProcessingCounter } from './counters/process-counter';
 
 export class CounterStore {
     get counterNames() {
@@ -120,10 +118,7 @@ export class CounterStore {
         };
     }
     private counterExpired() {
-        const now = Date.now();
-        const expired = process.memoryUsage().heapUsed / 1024 / 1024 > ConfigProvider.get().forceSlowDownOnMemory
-            || (now - this.lasUpdateDb > 60 * 1000);
-        return expired;
+        return Date.now() - this.lasUpdateDb > 60 * 1000;
     }
 
 }
