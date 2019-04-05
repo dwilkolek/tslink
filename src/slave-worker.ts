@@ -21,7 +21,7 @@ export class SlaveWorker extends TSlinkWorker {
         super();
         process.on('message', (message) => {
             console.log('received message', message);
-            // tslint:disable-next-line:no-unsafe-any
+            // tslint:disable-next-line:no-unsafe-any triple-equals
             if (this.job && message && message.type === 'kill' && this.job._id == message.jobid) {
                 this.job.kill('kill');
                 // tslint:disable-next-line:no-unsafe-any
