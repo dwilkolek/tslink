@@ -8,6 +8,18 @@ import { TSlinkWorker } from './worker';
 
 export class DbWorker extends TSlinkWorker {
 
+    public static copyJob(job: IJobDBO): IJobDBO {
+        const jobCopy = JSON.parse(JSON.stringify(job)) as IJobDBO;
+        delete jobCopy._id;
+        delete jobCopy.endDateTime;
+        delete jobCopy.statistics;
+        delete jobCopy.error;
+        jobCopy.lastUpdate = Date.now();
+        jobCopy.status = JobStatusEnum.STORED;
+        jobCopy.previousJob_id = job._id;
+        return jobCopy;
+    }
+
     private Q_OUT_OF_SYNC_JOBS: FilterQuery<IJobDBO> = {
         status: {
             $in: [JobStatusEnum.PROCESSING, JobStatusEnum.FAILED, JobStatusEnum.FINISHED, JobStatusEnum.ABANDONED_BY_PROCESS],
@@ -74,7 +86,6 @@ export class DbWorker extends TSlinkWorker {
             const jobdbo = await cursor.next();
             if (jobdbo != null && jobdbo._id != null) {
                 const redisValue = await this.redis.get().get(jobdbo._id);
-                console.log('redisValue', redisValue);
                 if (jobdbo.status != null) {
                     const updateJobObj = {
                         _id: jobdbo._id,
@@ -115,14 +126,7 @@ export class DbWorker extends TSlinkWorker {
                 jobdbo.endDateTime = new Date();
                 await this.db.updateJob(jobdbo);
                 console.log(`moved to abandoned ${jobdbo._id} and restore later`);
-                const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
-                delete jobCopy._id;
-                delete jobCopy.endDateTime;
-                delete jobCopy.statistics;
-                delete jobCopy.error;
-                jobCopy.lastUpdate = Date.now();
-                jobCopy.status = JobStatusEnum.STORED;
-                jobCopy.previousJob_id = jobdbo._id;
+                const jobCopy = DbWorker.copyJob(jobdbo);
                 await this.db.storeJob(jobCopy);
                 console.log(`restored job ${jobdbo._id} -> ${jobCopy._id}`);
             }

@@ -19,7 +19,17 @@ export class SlaveWorker extends TSlinkWorker {
 
     constructor() {
         super();
-        process.on('message', this.closeWorker);
+        process.on('message', (message) => {
+            console.log('received message', message);
+            // tslint:disable-next-line:no-unsafe-any
+            if (this.job && message && message.type === 'kill' && this.job._id == message.jobid) {
+                this.job.kill('kill');
+                // tslint:disable-next-line:no-unsafe-any
+            } else if (this.job && message && message.type === 'killAll') {
+                this.job.kill('killAll');
+            }
+
+        });
         process.on('uncaughtException', this.closeWorker);
         process.on('unhandledRejection', this.closeWorker);
         process.on('beforeExit', this.closeWorker);
@@ -111,7 +121,7 @@ export class SlaveWorker extends TSlinkWorker {
                 }
             })(this).catch((e) => {
                 console.log('Update to FAILED_TO_START', jobId, e);
-                this.updateError(jobId, JobStatusEnum.FAILED_TO_START, jobContext, jobDefinitionId, e);
+                this.updateError(jobId, jobContext, jobDefinitionId, e , JobStatusEnum.FAILED_TO_START);
             });
         }
     }
@@ -131,16 +141,16 @@ export class SlaveWorker extends TSlinkWorker {
                 console.log('Update to FINISHED', jobId);
             }, (rejected) => {
                 console.log('Update to FAILED', jobId, rejected);
-                this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, rejected);
+                this.updateError(jobId, jobContext, jobDefinitionId, rejected);
             }).catch((e) => {
                 console.log('Update to FAILED', jobId, e);
-                this.updateError(jobId, JobStatusEnum.FAILED, jobContext, jobDefinitionId, e);
+                this.updateError(jobId, jobContext, jobDefinitionId, e);
             });
         });
     }
 
-    public async updateError(jobId: string, status: JobStatusEnum, jobContext: JobContext,
-                             jobDefinitionId: string, error: any) {
+    public async updateError(jobId: string, jobContext: JobContext,
+                             jobDefinitionId: string, error: any, forcedStatus?: JobStatusEnum) {
         await this.updateRedisForJob(jobId);
         const up: IJobDBO = {
             _id: jobId,
@@ -151,7 +161,7 @@ export class SlaveWorker extends TSlinkWorker {
             processId: 0,
             progress: this.progress,
             statistics: this.job && this.job.counterStore.json() || null,
-            status,
+            status: forcedStatus ? forcedStatus : (error === 'kill' ? JobStatusEnum.KILLED : JobStatusEnum.FAILED),
         };
         this.db.updateJob(up).then(() => {
             if (jobContext.jobConfig.deleteWorkspaceOnError) {

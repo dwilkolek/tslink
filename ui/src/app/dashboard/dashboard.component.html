@@ -14,11 +14,11 @@
       <th scope="col">Start/End Time</th>
       <!-- <th scope="col">End Time</th> -->
       <th scope="col">Last offset</th>
-
+      <th scope="col">Actions</th>
     </tr>
   </thead>
   <tbody>
-    <tr *ngFor="let job of jobs; index as i" (click)="goToJob(job)">
+    <tr *ngFor="let job of jobs; index as i" (click)="goToJob(job,$event)">
       <!-- <th scope="row">{{ i + 1 }}</th> -->
       <!-- <td>
         {{ job._id }}
@@ -38,6 +38,11 @@
 
       <td>
         <pre>{{ job.offset ? (job.offset | json) : 'none'}}</pre>
+      </td>
+      <td>
+        <button *ngIf="job.status == 'PROCESSING'" type="button" (click)="kill(job._id)">KILL</button>
+        <button *ngIf="job.status != 'STORED'" type="button" (click)="restoreJob(job._id)">RUN COPY</button>
+        
       </td>
       <!-- <td>
         <pre>{{job | json}}</pre>

@@ -10,6 +10,14 @@ export class BackendService {
   constructor(private http: HttpClient) {
   }
 
+  killJob(jobId: string) {
+    return this.http.delete(`${environment.apiUrl}job/${jobId}`);
+  }
+
+  restoreJob(jobId: string) {
+    return this.http.put(`${environment.apiUrl}job/${jobId}`, null);
+  }
+
   getJobs() {
     return this.http.get(`${environment.apiUrl}job`);
   }

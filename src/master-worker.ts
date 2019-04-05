@@ -10,6 +10,7 @@ import { Transform } from 'stream';
 import * as unzip from 'unzip';
 import { isArray } from 'util';
 import { ConfigProvider } from './config-provider';
+import { DbWorker } from './db-wroker';
 import { FileProvider } from './file-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
@@ -53,13 +54,13 @@ export class MasterWorker extends TSlinkWorker {
     }
     public forkCores() {
         cluster.fork({ type: 'dbworker' });
-        this.maxSlaveWorkers = ConfigProvider.get().slaveWorkerCount || os.cpus().length + 1;
+        this.maxSlaveWorkers = ConfigProvider.get().slaveWorkerCount || os.cpus().length;
         setInterval(() => {
-            const workerCount = Object.keys(cluster.workers).length;
-            console.log('SlaveWorker count', workerCount - 1);
-            if (this.maxSlaveWorkers > Object.keys(cluster.workers).length) {
+            const workerCount = Object.keys(cluster.workers).length - 1;
+            console.log('SlaveWorker count', workerCount);
+            if (this.maxSlaveWorkers > workerCount) {
                 this.db.jobsToRunCount().then((numberOfStoredJobs) => {
-                    const workersLeft = this.maxSlaveWorkers - Object.keys(cluster.workers).length;
+                    const workersLeft = this.maxSlaveWorkers - workerCount;
                     const lower = workersLeft < numberOfStoredJobs ? workersLeft : numberOfStoredJobs;
                     for (let i = 0; i < lower; i++) {
                         cluster.fork({ type: 'slaveworker' });
@@ -74,7 +75,7 @@ export class MasterWorker extends TSlinkWorker {
                 const maybeWorker = cluster.workers[key];
                 if (maybeWorker != null) {
                     const worker = maybeWorker as cluster.Worker;
-                    worker.send('SIGTERM');
+                    worker.send({ type: 'killAll' });
                 }
             });
         });
@@ -94,6 +95,7 @@ export class MasterWorker extends TSlinkWorker {
             app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
                 res.header('Access-Control-Allow-Origin', '*');
                 res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+                res.header('Access-Control-Allow-Methods', '*');
                 next();
             });
         }
@@ -111,6 +113,36 @@ export class MasterWorker extends TSlinkWorker {
                     res.json(data);
                 });
             });
+        });
+
+        app.put('/api/job/:jobId', (req: express.Request, res: express.Response) => {
+            // tslint:disable-next-line:no-unsafe-any
+            const jobId = req.params.jobId as string;
+            this.db.findJob(jobId).then((originalJob) => {
+                if (originalJob) {
+                    const jobCopy = DbWorker.copyJob(originalJob);
+                    this.db.storeJob(jobCopy).then(() => {
+                        res.json();
+                    });
+                }
+            });
+        });
+
+        app.delete('/api/job/:jobId', (req: express.Request, res: express.Response) => {
+            // tslint:disable-next-line:no-unsafe-any
+            const jobId = req.params.jobId as string;
+            if (jobId) {
+                console.log('let\'s kill ' + jobId);
+                if (cluster.workers) {
+                    Object.keys(cluster.workers).forEach((key) => {
+                        const worker = cluster.workers[key];
+                        if (worker) {
+                            worker.send({ type: 'kill', jobid: jobId });
+                        }
+                    });
+                    res.json();
+                }
+            }
         });
 
         app.get('/api/job/:jobId', (req: express.Request, res: express.Response) => {

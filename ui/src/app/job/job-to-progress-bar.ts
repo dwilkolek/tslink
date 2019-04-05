@@ -6,6 +6,7 @@ export class JobToProgressBar {
     // [animated]="job.progressBar.animated"
 
     private static statusToColor = {
+        KILLED: 'danger',
         FAILED: 'danger',
         FAILED_SYNCHRONIZED: 'danger',
         FAILED_SYNCHRONIZED_RESTORED: 'warn',
