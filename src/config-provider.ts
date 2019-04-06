@@ -33,7 +33,6 @@ export class ConfigProvider {
             forceSlowDownOnMemory: 1000,
             inMemoryOffsetCaching: true,
             jobsDirectory: './jobs',
-            limitJobsPerWorker: 1,
             redis: {
                 host: '127.0.0.1',
                 options: {},

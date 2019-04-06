@@ -9,8 +9,6 @@ import { IJobDefinition } from './types/job-definition';
 
 export class Job {
 
-    private killIt = false;
-
     private get sourceNames() {
         return Object.keys(this.jobDescription.sources);
     }
@@ -27,6 +25,10 @@ export class Job {
         return this._counterStore;
     }
 
+    public rejectCb?: (rejectInfo: any) => void;
+
+    private killCommand = '';
+
     private _counterStore: CounterStore;
     private streams: { [key: string]: Stream } = {};
     private pipelines: Stream[] = [];
@@ -36,7 +38,7 @@ export class Job {
     private statisticCounter?: NodeJS.Timeout;
 
     constructor(private db: DBQueries, public _id: string, private jobDescription: IJobDefinition,
-                private jobContext: JobContext) {
+                private jobContext: JobContext, private getStoredProgress: () => number) {
         this._counterStore = new CounterStore(this._id, this.jobDescription.name);
 
         this.sourceNames.forEach((source) => {
@@ -50,13 +52,16 @@ export class Job {
         });
     }
 
-    public kill() {
-        this.killIt = true;
+    public kill(command: string) {
+        console.log('kill');
+        if (this.rejectCb) {
+            console.log('call reject');
+            this.rejectCb(command);
+        }
     }
     public run() {
 
         this.statisticCounter = this.getStatisticCounterTimeout();
-        console.log('JOB CONFIG: ', this.jobContext.jobConfig);
         return new Promise<Job>((resolve, reject) => {
             this.jobDescription.beforeProcessing(this.jobContext, () => {
 
@@ -65,16 +70,29 @@ export class Job {
                     this.streams[connection.from] = streamed;
                     // const readerOutStream = this.counterStore.collectCounterOut(connection.from, this.jobContext.jobConfig.objectMode);
                     // streamed = streamed.pipe(readerOutStream);
+
+                    const resolvedCb = () => {
+                        if (this.statisticCounter) {
+                            clearTimeout(this.statisticCounter);
+                        }
+                        this.jobDescription.afterProcessing(this.jobContext, () => {
+                            resolve(this);
+                        });
+                    };
+
+                    this.rejectCb = (reason: any) => {
+                        reject(reason);
+                    };
+
                     connection.to.forEach((connTo) => {
-                        const connectionNext = this.pipeNext(streamed, connTo);
+                        const connectionNext = this.pipeNext(streamed, connTo, resolvedCb);
                         connectionNext.forEach((_conn) => {
                             this.pipelines.push(_conn);
                         });
                     });
 
                 });
-
-                this.timeout = this.getTimeoutIsDone(resolve, reject);
+                // this.timeout = this.getTimeoutIsDone(resolve, reject);
             });
         });
     }
@@ -83,7 +101,7 @@ export class Job {
         return setTimeout(() => {
             this.db.updateJob({
                 _id: this._id,
-                progress: this.jobDescription.progress ? this.jobDescription.progress() : -1,
+                progress: this.getStoredProgress(),
                 statistics: this.counterStore.json(true),
             }).then(() => {
                 this.statisticCounter = this.getStatisticCounterTimeout();
@@ -91,37 +109,38 @@ export class Job {
         }, 30000);
     }
 
-    private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void, reject: (reason?: any) => void) {
-        return setTimeout(() => {
-            if (this.killIt) {
-                if (this.statisticCounter) {
-                    clearTimeout(this.statisticCounter);
-                }
-                if (this.timeout) {
-                    clearTimeout(this.timeout);
-                }
-                this.jobDescription.afterProcessing(this.jobContext, () => {
-                    reject('KILL signal');
-                });
-            }
-            if (this.workingEndPipes === 0) {
-                console.log('Finishin job:', this._id);
-                if (this.statisticCounter) {
-                    clearTimeout(this.statisticCounter);
-                }
-                if (this.timeout) {
-                    clearTimeout(this.timeout);
-                }
-                this.jobDescription.afterProcessing(this.jobContext, () => {
-                    resolve(this);
-                });
-            } else {
-                this.timeout = this.getTimeoutIsDone(resolve, reject);
-            }
+    // private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void, reject: (reason?: any) => void) {
+    //     return setTimeout(() => {
+    //         if (this.killCommand !== '') {
+    //             console.log('executting command', this.killCommand);
+    //             if (this.statisticCounter) {
+    //                 clearTimeout(this.statisticCounter);
+    //             }
+    //             if (this.timeout) {
+    //                 clearTimeout(this.timeout);
+    //             }
+    //             this.jobDescription.afterProcessing(this.jobContext, () => {
+    //                 reject(this.killCommand);
+    //             });
+    //         }
+    //         if (this.workingEndPipes === 0) {
+    //             console.log('Finishin job:', this._id);
+    //             if (this.statisticCounter) {
+    //                 clearTimeout(this.statisticCounter);
+    //             }
+    //             if (this.timeout) {
+    //                 clearTimeout(this.timeout);
+    //             }
+    //             this.jobDescription.afterProcessing(this.jobContext, () => {
+    //                 resolve(this);
+    //             });
+    //         } else {
+    //             this.timeout = this.getTimeoutIsDone(resolve, reject);
+    //         }
 
-        }, 25000);
-    }
-    private pipeNext(stream: Stream, connectionNext: IConnectionNext): Stream[] {
+    //     }, 25000);
+    // }
+    private pipeNext(stream: Stream, connectionNext: IConnectionNext, resolve: (job: Job) => void): Stream[] {
         if (connectionNext) {
             const transform = this.getTransformStream(connectionNext.name);
             const write = this.getWriteStream(connectionNext.name);
@@ -140,6 +159,9 @@ export class Job {
                 this.workingEndPipes++;
                 write.on('finish', () => {
                     this.workingEndPipes--;
+                    if (this.workingEndPipes === 0) {
+                        resolve(this);
+                    }
                 });
 
             }
@@ -147,7 +169,7 @@ export class Job {
             if (connectionNext.to) {
                 const nextStreams: Stream[] = [];
                 connectionNext.to.forEach((connNextTo) => {
-                    this.pipeNext(streamNext, connNextTo).forEach((subStream) => {
+                    this.pipeNext(streamNext, connNextTo, resolve).forEach((subStream) => {
                         nextStreams.push(subStream);
                     });
                 });

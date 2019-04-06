@@ -35,8 +35,32 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  goToJob(job: any) {
-    this.router.navigate([`job/${job._id}`]);
+  goToJob(job: any, $event: MouseEvent) {
+    if (!($event.target instanceof HTMLButtonElement)) {
+      this.router.navigate([`job/${job._id}`]);
+    }
   }
+
+  private runningOperation = false;
+
+  kill(jobId: string) {
+    if (!this.runningOperation) {
+      this.runningOperation = true;
+      this.backend.killJob(jobId).subscribe(() => {
+        this.runningOperation = false;
+        alert('Killed!');
+      });
+    }
+  }
+  restoreJob(jobId: string) {
+    if (!this.runningOperation) {
+      this.runningOperation = true;
+      this.backend.restoreJob(jobId).subscribe(() => {
+        this.runningOperation = false;
+        alert('Stored copy of your job!');
+      });
+    }
+  }
+
 
 }

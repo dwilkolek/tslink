@@ -10,6 +10,7 @@ import { Transform } from 'stream';
 import * as unzip from 'unzip';
 import { isArray } from 'util';
 import { ConfigProvider } from './config-provider';
+import { DbWorker } from './db-wroker';
 import { FileProvider } from './file-provider';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobConfig } from './types/job-config';
@@ -23,7 +24,7 @@ export class MasterWorker extends TSlinkWorker {
     public timeoutAbandonedJobs?: NodeJS.Timeout;
     public timeoutToUpdateOffsetsInDb?: NodeJS.Timeout;
     private port = ConfigProvider.get().port || 9090;
-
+    private maxSlaveWorkers = 1;
     private files: string[] = [];
 
     private allowedExt = [
@@ -52,18 +53,21 @@ export class MasterWorker extends TSlinkWorker {
         this.createDirectories();
     }
     public forkCores() {
-        const cpus = ConfigProvider.get().slaveWorkerCount || os.cpus().length;
-        console.log(`Forking for ${cpus} slaveWorkers`);
         cluster.fork({ type: 'dbworker' });
-        for (let i = 0; i < cpus; i++) {
-            cluster.fork({ type: 'slaveworker' });
-        }
+        this.maxSlaveWorkers = ConfigProvider.get().slaveWorkerCount || os.cpus().length;
         setInterval(() => {
-            if (Object.keys(cluster.workers).length < (cpus + 2)) {
-                console.log('Restoring slaveWorker');
-                cluster.fork({ type: 'slaveworker' });
+            const workerCount = Object.keys(cluster.workers).length - 1;
+            console.log('SlaveWorker count', workerCount);
+            if (this.maxSlaveWorkers > workerCount) {
+                this.db.jobsToRunCount().then((numberOfStoredJobs) => {
+                    const workersLeft = this.maxSlaveWorkers - workerCount;
+                    const lower = workersLeft < numberOfStoredJobs ? workersLeft : numberOfStoredJobs;
+                    for (let i = 0; i < lower; i++) {
+                        cluster.fork({ type: 'slaveworker' });
+                    }
+                });
             }
-        }, 30000);
+        }, 10000);
 
         process.on('SIGTERM', () => {
             console.log('SIGTERM signal received.');
@@ -71,7 +75,7 @@ export class MasterWorker extends TSlinkWorker {
                 const maybeWorker = cluster.workers[key];
                 if (maybeWorker != null) {
                     const worker = maybeWorker as cluster.Worker;
-                    worker.send('SIGTERM');
+                    worker.send({ type: 'killAll' });
                 }
             });
         });
@@ -91,6 +95,7 @@ export class MasterWorker extends TSlinkWorker {
             app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
                 res.header('Access-Control-Allow-Origin', '*');
                 res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+                res.header('Access-Control-Allow-Methods', '*');
                 next();
             });
         }
@@ -108,6 +113,36 @@ export class MasterWorker extends TSlinkWorker {
                     res.json(data);
                 });
             });
+        });
+
+        app.put('/api/job/:jobId', (req: express.Request, res: express.Response) => {
+            // tslint:disable-next-line:no-unsafe-any
+            const jobId = req.params.jobId as string;
+            this.db.findJob(jobId).then((originalJob) => {
+                if (originalJob) {
+                    const jobCopy = DbWorker.copyJob(originalJob);
+                    this.db.storeJob(jobCopy).then(() => {
+                        res.json();
+                    });
+                }
+            });
+        });
+
+        app.delete('/api/job/:jobId', (req: express.Request, res: express.Response) => {
+            // tslint:disable-next-line:no-unsafe-any
+            const jobId = req.params.jobId as string;
+            if (jobId) {
+                console.log('let\'s kill ' + jobId);
+                if (cluster.workers) {
+                    Object.keys(cluster.workers).forEach((key) => {
+                        const worker = cluster.workers[key];
+                        if (worker) {
+                            worker.send({ type: 'kill', jobid: jobId });
+                        }
+                    });
+                    res.json();
+                }
+            }
         });
 
         app.get('/api/job/:jobId', (req: express.Request, res: express.Response) => {

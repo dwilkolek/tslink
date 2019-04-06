@@ -3,9 +3,22 @@ import { FilterQuery } from 'mongodb';
 import { setInterval } from 'timers';
 import { JobStatusEnum } from './job-status-enum';
 import { IJobDBO } from './types/job-dbo';
+import { IRedisRecord } from './types/redis-record';
 import { TSlinkWorker } from './worker';
 
 export class DbWorker extends TSlinkWorker {
+
+    public static copyJob(job: IJobDBO): IJobDBO {
+        const jobCopy = JSON.parse(JSON.stringify(job)) as IJobDBO;
+        delete jobCopy._id;
+        delete jobCopy.endDateTime;
+        delete jobCopy.statistics;
+        delete jobCopy.error;
+        jobCopy.lastUpdate = Date.now();
+        jobCopy.status = JobStatusEnum.STORED;
+        jobCopy.previousJob_id = job._id;
+        return jobCopy;
+    }
 
     private Q_OUT_OF_SYNC_JOBS: FilterQuery<IJobDBO> = {
         status: {
@@ -42,7 +55,7 @@ export class DbWorker extends TSlinkWorker {
             $and:
                 [
                     {
-                        lastUpdate: { $lte: Date.now() - 5 * 60 * 1000 },
+                        lastUpdate: { $lte: Date.now() - 90 * 1000 },
                     },
                     {
                         status: JobStatusEnum.PROCESSING,
@@ -77,7 +90,8 @@ export class DbWorker extends TSlinkWorker {
                     const updateJobObj = {
                         _id: jobdbo._id,
                         lastUpdate: jobdbo.lastUpdate,
-                        offset: redisValue != null ? JSON.parse(redisValue) : null,
+                        offset: redisValue != null ? (JSON.parse(redisValue) as IRedisRecord).offset : jobdbo.offset,
+                        progress: redisValue != null ? (JSON.parse(redisValue) as IRedisRecord).progress : jobdbo.progress,
                         status: jobdbo.status,
                     };
                     if (JobStatusEnum.FINISHED === jobdbo.status) {
@@ -112,10 +126,7 @@ export class DbWorker extends TSlinkWorker {
                 jobdbo.endDateTime = new Date();
                 await this.db.updateJob(jobdbo);
                 console.log(`moved to abandoned ${jobdbo._id} and restore later`);
-                const jobCopy = JSON.parse(JSON.stringify(jobdbo)) as IJobDBO;
-                delete jobCopy._id;
-                jobCopy.status = JobStatusEnum.STORED;
-                jobCopy.previousJob_id = jobdbo._id;
+                const jobCopy = DbWorker.copyJob(jobdbo);
                 await this.db.storeJob(jobCopy);
                 console.log(`restored job ${jobdbo._id} -> ${jobCopy._id}`);
             }

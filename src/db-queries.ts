@@ -13,6 +13,11 @@ export class DBQueries {
 
     private mongoDb?: Db;
 
+    public async jobsToRunCount() {
+        const collection = await this.jobs();
+        return collection.countDocuments({status: JobStatusEnum.STORED});
+    }
+
     public async findJobDefinitions(): Promise<Cursor<IJobDefinitionDBO>> {
         const collection = await this.jobsDefinitions();
         return new Promise((resolve) => { resolve(collection.find({}, {})); });
