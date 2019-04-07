@@ -4,4 +4,5 @@ import { JobContext } from './job-context';
 
 export interface ITransformDescription {
     get: (jobContext: JobContext) => Transform;
+    readFrom: string[];
 }

@@ -78,7 +78,7 @@ export class JobComponent {
       });
 
       this.job.connections.forEach(element => {
-        this.pushNextConnectionsToLink(element.from, element.to);
+        this.links.push({ source: element.from, target: element.to });
       });
 
       if (this.process != null) {

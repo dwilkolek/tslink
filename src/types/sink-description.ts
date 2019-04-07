@@ -4,4 +4,5 @@ import { JobContext } from './job-context';
 
 export interface ISinkDescription {
     get: (jobContext: JobContext) => Writable;
+    readFrom: string[];
 }

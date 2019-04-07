@@ -101,7 +101,12 @@ export class SlaveWorker extends TSlinkWorker {
                 (progress: number) => {
                     this.progress = progress;
                 },
-                iJobDbo.offset);
+                iJobDbo.offset,
+                () => {
+                    if (this.job) {
+                        this.job.done();
+                    }
+                });
 
             (async (self) => {
                 console.log('jobId', jobId, '; jobDefinitionDirectory: ',

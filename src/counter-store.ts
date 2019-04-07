@@ -1,4 +1,4 @@
-import { Stream } from 'stream';
+import { Stream, Transform } from 'stream';
 import { NodeCounter } from './counters/node-counter';
 
 export class CounterStore {
@@ -23,11 +23,25 @@ export class CounterStore {
         this.counters[name].putOut(buff);
     }
 
-    public collectCounterIn(name: string, objectMode: boolean) {
-        const transformStream = new Stream.Transform({ objectMode, highWaterMark: 100 });
-        transformStream._transform = (chunk: any, encoding: string, done) => {
-            if (this.counterExpired()) {
-                setImmediate(() => {
+    public collectCounterIn(streams: { [key: string]: Stream }, name: string, objectMode: boolean): Transform {
+        if (!streams[this.inName(name)]) {
+            const transformStream = new Stream.Transform({ objectMode, highWaterMark: 100 });
+            transformStream._transform = (chunk: any, encoding: string, done) => {
+                if (this.counterExpired()) {
+                    setImmediate(() => {
+                        if (typeof chunk === 'object') {
+                            this.putIn(name, Buffer.from(JSON.stringify(chunk)));
+                        } else if (typeof chunk === 'string') {
+                            this.putIn(name, Buffer.from(chunk));
+                        } else if (chunk instanceof Buffer) {
+                            this.putIn(name, Buffer.from(chunk));
+                        } else {
+                            console.warn('Cannot process in counter', name, chunk);
+                        }
+
+                        done(null, chunk);
+                    });
+                } else {
                     if (typeof chunk === 'object') {
                         this.putIn(name, Buffer.from(JSON.stringify(chunk)));
                     } else if (typeof chunk === 'string') {
@@ -39,28 +53,30 @@ export class CounterStore {
                     }
 
                     done(null, chunk);
-                });
-            } else {
-                if (typeof chunk === 'object') {
-                    this.putIn(name, Buffer.from(JSON.stringify(chunk)));
-                } else if (typeof chunk === 'string') {
-                    this.putIn(name, Buffer.from(chunk));
-                } else if (chunk instanceof Buffer) {
-                    this.putIn(name, Buffer.from(chunk));
-                } else {
-                    console.warn('Cannot process in counter', name, chunk);
                 }
-
-                done(null, chunk);
-            }
-        };
-        return transformStream;
+            };
+            streams[this.inName(name)] = transformStream;
+        }
+        return streams[this.inName(name)] as Transform;
     }
-    public collectCounterOut(name: string, objectMode: boolean) {
-        const transformStream = new Stream.Transform({ objectMode, highWaterMark: 100 });
-        transformStream._transform = (chunk: any, encoding: string, done) => {
-            if (this.counterExpired()) {
-                setImmediate(() => {
+    public collectCounterOut(streams: { [key: string]: Stream }, name: string, objectMode: boolean): Transform {
+        if (!streams[this.outName(name)]) {
+            const transformStream = new Stream.Transform({ objectMode, highWaterMark: 100 });
+            transformStream._transform = (chunk: any, encoding: string, done) => {
+                if (this.counterExpired()) {
+                    setImmediate(() => {
+                        if (typeof chunk === 'object') {
+                            this.putOut(name, Buffer.from(JSON.stringify(chunk)));
+                        } else if (typeof chunk === 'string') {
+                            this.putOut(name, Buffer.from(chunk));
+                        } else if (chunk instanceof Buffer) {
+                            this.putOut(name, Buffer.from(chunk));
+                        } else {
+                            console.warn('Cannot process out counter', name, chunk);
+                        }
+                        done(null, chunk);
+                    });
+                } else {
                     if (typeof chunk === 'object') {
                         this.putOut(name, Buffer.from(JSON.stringify(chunk)));
                     } else if (typeof chunk === 'string') {
@@ -71,29 +87,11 @@ export class CounterStore {
                         console.warn('Cannot process out counter', name, chunk);
                     }
                     done(null, chunk);
-                });
-            } else {
-                if (typeof chunk === 'object') {
-                    this.putOut(name, Buffer.from(JSON.stringify(chunk)));
-                } else if (typeof chunk === 'string') {
-                    this.putOut(name, Buffer.from(chunk));
-                } else if (chunk instanceof Buffer) {
-                    this.putOut(name, Buffer.from(chunk));
-                } else {
-                    console.warn('Cannot process out counter', name, chunk);
                 }
-                done(null, chunk);
-            }
-        };
-        return transformStream;
-    }
-
-    public inName(name: string) {
-        return this.jobName + ':' + name + '-in';
-    }
-
-    public outName(name: string) {
-        return this.jobName + ':' + name + '-out';
+            };
+            streams[this.outName(name)] = transformStream;
+        }
+        return streams[this.outName(name)] as Transform;
     }
 
     public prettyPrint() {
@@ -117,6 +115,19 @@ export class CounterStore {
             }),
         };
     }
+
+    private inName(name: string) {
+        return 'in#' + name;
+    }
+
+    private outName(name: string) {
+        return 'out#' + name;
+    }
+
+    private mergedInName(name: string) {
+        return 'mergedIn#' + name;
+    }
+
     private counterExpired() {
         return Date.now() - this.lasUpdateDb > 60 * 1000;
     }

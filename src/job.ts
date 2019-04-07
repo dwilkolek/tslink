@@ -1,11 +1,12 @@
-import * as process from 'process';
-import { Stream, Transform, Writable } from 'stream';
 import { Readable } from 'stream';
+import { Stream, Transform, Writable } from 'stream';
 import { CounterStore } from './counter-store';
 import { DBQueries } from './db-queries';
-import { IConnectionNext } from './types/connection-next';
 import { JobContext } from './types/job-context';
 import { IJobDefinition } from './types/job-definition';
+import { ISinkDescription } from './types/sink-description';
+import { ISourceDescription } from './types/source-description';
+import { ITransformDescription } from './types/transform-descriptions';
 
 export class Job {
 
@@ -26,15 +27,12 @@ export class Job {
     }
 
     public rejectCb?: (rejectInfo: any) => void;
-
-    private killCommand = '';
-
+    public resolveCb?: () => void;
     private _counterStore: CounterStore;
     private streams: { [key: string]: Stream } = {};
-    private pipelines: Stream[] = [];
-    private workingEndPipes = 0;
 
-    private timeout?: NodeJS.Timeout;
+    private createdConnections: Array<{ from: string, to: string }> = [];
+
     private statisticCounter?: NodeJS.Timeout;
 
     constructor(private db: DBQueries, public _id: string, private jobDescription: IJobDefinition,
@@ -59,42 +57,89 @@ export class Job {
             this.rejectCb(command);
         }
     }
+    public done() {
+        if (this.resolveCb) {
+            this.resolveCb();
+        }
+    }
     public run() {
 
         this.statisticCounter = this.getStatisticCounterTimeout();
         return new Promise<Job>((resolve, reject) => {
             this.jobDescription.beforeProcessing(this.jobContext, () => {
 
-                this.jobDescription.connections.forEach((connection) => {
-                    const streamed = this.getReadStream(connection.from);
-                    this.streams[connection.from] = streamed;
-                    // const readerOutStream = this.counterStore.collectCounterOut(connection.from, this.jobContext.jobConfig.objectMode);
-                    // streamed = streamed.pipe(readerOutStream);
-
-                    const resolvedCb = () => {
-                        if (this.statisticCounter) {
-                            clearTimeout(this.statisticCounter);
-                        }
-                        this.jobDescription.afterProcessing(this.jobContext, () => {
-                            resolve(this);
-                        });
-                    };
-
-                    this.rejectCb = (reason: any) => {
-                        reject(reason);
-                    };
-
-                    connection.to.forEach((connTo) => {
-                        const connectionNext = this.pipeNext(streamed, connTo, resolvedCb);
-                        connectionNext.forEach((_conn) => {
-                            this.pipelines.push(_conn);
-                        });
-                    });
-
+                this.sourceNames.forEach((name) => {
+                    this.getOrCreateReadableStream(name, this.jobDescription.sources[name])
+                        .pipe(this.counterStore.collectCounterOut(this.streams, name, true), {end: false});
                 });
-                // this.timeout = this.getTimeoutIsDone(resolve, reject);
+
+                this.transformerNames.forEach((name) => {
+                    const inS = this.counterStore.collectCounterIn(this.streams, name, true);
+                    const transS = this.getOrCreateTransformStream(name, this.jobDescription.transformers[name]);
+                    const outS = this.counterStore.collectCounterOut(this.streams, name, true);
+                    inS.pipe(transS, {end: false}).pipe(outS, {end: false});
+                });
+
+                this.sinkNames.forEach((name) => {
+                    const inS = this.counterStore.collectCounterIn(this.streams, name, true);
+                    const writeS = this.getOrCreateWritableStream(name, this.jobDescription.sinks[name]);
+                    inS.pipe(writeS, {end: false});
+                });
+                this.transformerNames.forEach((name) => {
+                    const inS = this.counterStore.collectCounterIn(this.streams, name, true);
+                    this.jobDescription.transformers[name].readFrom.forEach((rd) => {
+                        this.createdConnections.push({from: rd, to: name});
+                        this.counterStore.collectCounterOut(this.streams, rd, true).pipe(inS, {end: false});
+                    });
+                });
+                this.sinkNames.forEach((name) => {
+                    const inS = this.counterStore.collectCounterIn(this.streams, name, true);
+                    this.jobDescription.sinks[name].readFrom.forEach((rd) => {
+                        this.createdConnections.push({from: rd, to: name});
+                        this.counterStore.collectCounterOut(this.streams, rd, true).pipe(inS, {end: false});
+                    });
+                });
+                this.db.updateJob({_id: this._id, connections: this.createdConnections});
+                this.resolveCb = () => {
+                    if (this.statisticCounter) {
+                        clearTimeout(this.statisticCounter);
+                    }
+                    this.jobDescription.afterProcessing(this.jobContext, () => {
+                        resolve(this);
+                    });
+                };
+
+                this.rejectCb = (reason: any) => {
+                    reject(reason);
+                };
+
             });
         });
+    }
+
+    private getOrCreateReadableStream(name: string, streamDef: ISourceDescription): Readable {
+        if (!this.streams['r#' + name]) {
+            this.streams['r#' + name] = streamDef.get(this.jobContext);
+        }
+        return this.streams['r#' + name] as Readable;
+    }
+
+    private getOrCreateTransformStream(name: string, streamDef: ITransformDescription): Transform {
+        if (!this.streams['t#' + name]) {
+            if (streamDef) {
+                this.streams['t#' + name] = streamDef.get(this.jobContext);
+            }
+        }
+        return this.streams['t#' + name] as Transform;
+    }
+
+    private getOrCreateWritableStream(name: string, streamDef: ISinkDescription): Writable {
+        if (!this.streams['w#' + name]) {
+            if (streamDef) {
+                this.streams['w#' + name] = streamDef.get(this.jobContext);
+            }
+        }
+        return this.streams['w#' + name] as Writable;
     }
 
     private getStatisticCounterTimeout() {
@@ -107,98 +152,6 @@ export class Job {
                 this.statisticCounter = this.getStatisticCounterTimeout();
             });
         }, 30000);
-    }
-
-    // private getTimeoutIsDone(resolve: (value?: Job | PromiseLike<Job>) => void, reject: (reason?: any) => void) {
-    //     return setTimeout(() => {
-    //         if (this.killCommand !== '') {
-    //             console.log('executting command', this.killCommand);
-    //             if (this.statisticCounter) {
-    //                 clearTimeout(this.statisticCounter);
-    //             }
-    //             if (this.timeout) {
-    //                 clearTimeout(this.timeout);
-    //             }
-    //             this.jobDescription.afterProcessing(this.jobContext, () => {
-    //                 reject(this.killCommand);
-    //             });
-    //         }
-    //         if (this.workingEndPipes === 0) {
-    //             console.log('Finishin job:', this._id);
-    //             if (this.statisticCounter) {
-    //                 clearTimeout(this.statisticCounter);
-    //             }
-    //             if (this.timeout) {
-    //                 clearTimeout(this.timeout);
-    //             }
-    //             this.jobDescription.afterProcessing(this.jobContext, () => {
-    //                 resolve(this);
-    //             });
-    //         } else {
-    //             this.timeout = this.getTimeoutIsDone(resolve, reject);
-    //         }
-
-    //     }, 25000);
-    // }
-    private pipeNext(stream: Stream, connectionNext: IConnectionNext, resolve: (job: Job) => void): Stream[] {
-        if (connectionNext) {
-            const transform = this.getTransformStream(connectionNext.name);
-            const write = this.getWriteStream(connectionNext.name);
-
-            const inStream = this.counterStore.collectCounterIn(connectionNext.name, this.jobContext.jobConfig.objectMode);
-
-            let streamNext: Stream = stream
-                .pipe(inStream);
-            if (transform) {
-                streamNext = streamNext.pipe(transform);
-                const outStream = this.counterStore.collectCounterOut(connectionNext.name, this.jobContext.jobConfig.objectMode);
-                streamNext = streamNext.pipe(outStream);
-            }
-            if (!transform && write) {
-                streamNext = streamNext.pipe(write);
-                this.workingEndPipes++;
-                write.on('finish', () => {
-                    this.workingEndPipes--;
-                    if (this.workingEndPipes === 0) {
-                        resolve(this);
-                    }
-                });
-
-            }
-
-            if (connectionNext.to) {
-                const nextStreams: Stream[] = [];
-                connectionNext.to.forEach((connNextTo) => {
-                    this.pipeNext(streamNext, connNextTo, resolve).forEach((subStream) => {
-                        nextStreams.push(subStream);
-                    });
-                });
-                return nextStreams;
-            }
-            return [streamNext];
-        }
-        return [stream];
-    }
-
-    private getWriteStream(name: string): Writable | null {
-        const sinkNode = this.jobDescription.sinks[name];
-        if (sinkNode) {
-            return this.jobDescription.sinks[name].get(this.jobContext);
-        }
-        return null;
-    }
-
-    private getTransformStream(name: string): Transform | null {
-        const transformNode = this.jobDescription.transformers[name];
-        if (transformNode) {
-            return transformNode.get(this.jobContext);
-        }
-        return null;
-    }
-
-    private getReadStream(name: string): Readable {
-        return this.jobDescription.sources[name].get(this.jobContext);
-
     }
 
 }
