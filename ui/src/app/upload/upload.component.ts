@@ -8,10 +8,10 @@ import { BackendService } from '../backend.service';
 })
 export class UploadComponent {
 
-  @ViewChild('jobDefinitionFile')
+  @ViewChild('jobDefinitionFile', { static: true })
   jobDefinitionFileInput: ElementRef;
 
-  @ViewChild('jobConfigFile')
+  @ViewChild('jobConfigFile', { static: true })
   jobConfigFileInput: ElementRef;
 
   constructor(private backend: BackendService) {

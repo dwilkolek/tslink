@@ -8,10 +8,10 @@ import { BackendService } from '../backend.service';
 })
 export class ManagerComponent {
 
-  @ViewChild('jobDefinitionFile')
+  @ViewChild('jobDefinitionFile', { static: false })
   jobDefinitionFileInput: ElementRef;
 
-  @ViewChild('jobConfigFile')
+  @ViewChild('jobConfigFile', { static: false })
   jobConfigFileInput: ElementRef;
 
   constructor(private backend: BackendService) {
