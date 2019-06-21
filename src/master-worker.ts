@@ -273,6 +273,7 @@ export class MasterWorker extends TSlinkWorker {
             });
         });
         readStream
+            // tslint:disable-next-line: no-unsafe-any
             .pipe(unzipper.Extract({ path: `${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}` }));
     }
 
