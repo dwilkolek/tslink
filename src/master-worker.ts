@@ -7,7 +7,7 @@ import { Cursor } from 'mongodb';
 import * as os from 'os';
 import * as path from 'path';
 import { Transform } from 'stream';
-import * as unzip from 'unzip';
+import * as unzipper from 'unzipper';
 import { isArray } from 'util';
 import { ConfigProvider } from './config-provider';
 import { DbWorker } from './db-wroker';
@@ -267,7 +267,8 @@ export class MasterWorker extends TSlinkWorker {
         // tslint:disable-next-line:no-unsafe-any
         const writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
         readStream
-            .pipe(unzip.Parse() as Transform)
+            // tslint:disable-next-line: no-unsafe-any
+            .pipe(unzipper.Parse())
             .pipe(writeStream);
         fs.unlink(pathZip, (err) => {
             if (err) {
