@@ -265,16 +265,15 @@ export class MasterWorker extends TSlinkWorker {
         FileProvider.createDirectory(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
         const readStream = fs.createReadStream(pathZip);
         // tslint:disable-next-line:no-unsafe-any
-        const writeStream = fstream.Writer(`${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}`);
-        readStream
-            // tslint:disable-next-line: no-unsafe-any
-            .pipe(unzipper.Parse())
-            .pipe(writeStream);
-        fs.unlink(pathZip, (err) => {
-            if (err) {
-                throw err;
-            }
+        readStream.on('close', () => {
+            fs.unlink(pathZip, (err) => {
+                if (err) {
+                    throw err;
+                }
+            });
         });
+        readStream
+            .pipe(unzipper.Extract({ path: `${FileProvider.getSystemPath(ConfigProvider.get().jobsDirectory)}/${jobId}` }));
     }
 
 }

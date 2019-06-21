@@ -32,7 +32,8 @@
     "gulp-typescript": "^5.0.1",
     "pkg": "^4.3.7",
     "tslint": "^5.14.0",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.3.3333",
+    "event-stream": "^4.0.1"
   },
   "dependencies": {
     "@types/app-module-path": "^2.2.0",
